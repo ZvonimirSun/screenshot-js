@@ -2,7 +2,7 @@
   "name": "screenshot-js",
   "version": "0.0.1",
   "description": "A screenshot tool for js",
-  "main": "./src/screenshot.js",
+  "main": "./dist/screenshot.min.js",
   "scripts": {
     "build:prod": "webpack --mode=production",
     "build:test": "webpack --mode=development",
