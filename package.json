@@ -2,10 +2,10 @@
   "name": "screenshot-js",
   "version": "0.0.1",
   "description": "A screenshot tool for js",
-  "main": "./dist/screenshot.min.js",
+  "main": "./dist/screenshot.umd.js",
   "scripts": {
     "start": "webpack-dev-server --mode development --config ./webpack.config.js",
-    "build:prod": "webpack --mode=production",
+    "build:prod": "cross-env production=true webpack --mode=production",
     "build:test": "webpack --mode=development",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -24,6 +24,7 @@
     "@babel/eslint-parser": "^7.17.0",
     "@babel/preset-env": "^7.16.11",
     "babel-loader": "^8.2.4",
+    "cross-env": "^7.0.3",
     "css-loader": "^6.7.1",
     "eslint": "^8.12.0",
     "eslint-config-standard": "^16.0.3",
@@ -34,6 +35,7 @@
     "sass": "^1.49.9",
     "sass-loader": "^12.6.0",
     "style-loader": "^3.3.1",
+    "terser-webpack-plugin": "^5.3.1",
     "webpack": "^5.70.0",
     "webpack-cli": "^4.9.2",
     "webpack-dev-server": "^4.7.4"
