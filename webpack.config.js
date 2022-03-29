@@ -4,10 +4,14 @@ module.exports = {
   // 入口，是一个对象
   entry: "./src/screenshot.js",
   output: {
-    library: "screenshot",
+    library: "ScreenShot",
     libraryTarget: "umd",
+    libraryExport: "default",
     path: path.resolve(__dirname, "dist"),
     filename: "screenshot.min.js",
+  },
+  devServer: {
+    static: "./dist",
   },
   module: {
     rules: [
@@ -29,6 +33,10 @@ module.exports = {
             ],
           },
         },
+      },
+      {
+        test: /\.(sa|sc|c)ss$/i,
+        use: ["style-loader", "css-loader", "postcss-loader", "sass-loader"],
       },
     ],
   },

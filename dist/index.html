@@ -1,0 +1,49 @@
+<html>
+  <head>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        font-size: 100%;
+        vertical-align: baseline;
+        background: transparent;
+        width: 100%;
+        height: 100%;
+      }
+
+      .container {
+        width: 100%;
+        height: 100%;
+        position: relative;
+      }
+
+      .testImage {
+        width: 100%;
+        height: 100%;
+      }
+
+      .editor {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <img
+        id="test"
+        class="testImage"
+        src="https://img.iszy.xyz/1648524178925.png?x-oss-process=style/big"
+      />
+      <div class="editor"></div>
+    </div>
+    <script type="text/javascript" src="./screenshot.min.js"></script>
+    <script type="text/javascript" src="./index.js"></script>
+  </body>
+</html>
