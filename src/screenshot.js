@@ -38,7 +38,7 @@ export default class ScreenShot {
   }
 
   static getMergeImage ({ imgList = [], width, height, callback = () => {} }) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const canvas = document.createElement('canvas')
       canvas.width = width
       canvas.height = height
@@ -94,7 +94,20 @@ export default class ScreenShot {
     }
 
     this._initDom({ node, img })
-    this._initEvent()
+    this._initSnipperEvent()
+  }
+
+  destroy (callback = () => {}) {
+    _clearDom(this._node)
+    delete this._node.__SCREEN_SHOT_GENERATED__
+    delete this._node
+    delete this._container
+    delete this._img
+    delete this._snipper
+    delete this._resizer
+    delete this._snipInfo
+    delete this._drawer
+    callback()
   }
 
   _initDom ({ node, img }) {
@@ -106,10 +119,10 @@ export default class ScreenShot {
   _initNode (node) {
     this._node = node
     this._node.__SCREEN_SHOT_GENERATED__ = true
-    this._clearDom(this._node)
+    _clearDom(this._node)
     this._container = document.createElement('div')
     this._container.classList.add('screenshot')
-    this._node.appendChild(this._container)
+    this._node.append(this._container)
   }
 
   _initImage (img) {
@@ -122,7 +135,7 @@ export default class ScreenShot {
       return
     }
     this._img.classList.add('screenshot-image')
-    this._container.appendChild(this._img)
+    this._container.append(this._img)
   }
 
   _initSnipper () {
@@ -135,84 +148,87 @@ export default class ScreenShot {
     )
     this._snipper.style.borderWidth = snipperBorderWidth + 'px'
     this._snipper.style.transform = `matrix(1,0,0,1,${-snipperBorderWidth},${-snipperBorderWidth})`
-    this._container.appendChild(this._snipper)
-  }
-
-  _initEvent () {
-    let startPosition
-    let moveFunc
-    let downFunc = _handleMouseDown.bind(this)
-    let upFunc = _handleMouseUp.bind(this)
-    this._container.addEventListener('click', () => {})
-    this._container.addEventListener('mousedown', downFunc)
-    this._container.addEventListener('mouseup', upFunc)
-
-    function _handleMouseDown (e) {
-      this._snipper.style.borderColor = 'rgba(0,0,0,0.6)'
-      this._snipper.style.cursor = 'crosshair'
-      this._destroyResizer()
-      this._destroyDrawer()
-      if (moveFunc) {
-        this._container.removeEventListener('mousemove', moveFunc)
-      }
-      startPosition = {
-        x: e.clientX,
-        y: e.clientY
-      }
-      this._snipInfo = {}
-      moveFunc = _handleMouseMove.bind(this)
-      this._container.addEventListener('mousemove', moveFunc)
-    }
-
-    function _handleMouseMove (e) {
-      const currentPosition = {
-        x: e.clientX,
-        y: e.clientY
-      }
-      const snipperBorderWidth = parseFloat(this._snipper.style.borderWidth)
-      this._snipInfo = {
-        width: Math.abs(currentPosition.x - startPosition.x),
-        height: Math.abs(currentPosition.y - startPosition.y),
-        x:
-          Math.min(currentPosition.x, startPosition.x) -
-          this._container.offsetLeft,
-        y:
-          Math.min(currentPosition.y, startPosition.y) -
-          this._container.offsetTop
-      }
-      this._snipper.style.width = this._snipInfo.width + 'px'
-      this._snipper.style.height = this._snipInfo.height + 'px'
-      this._snipper.style.transform = `matrix(1,0,0,1,${
-        this._snipInfo.x - snipperBorderWidth
-      },${this._snipInfo.y - snipperBorderWidth})`
-    }
-
-    function _handleMouseUp () {
-      this._snipper.style.cursor = 'default'
-      if (moveFunc) {
-        this._container.removeEventListener('mousemove', moveFunc)
-        this._container.removeEventListener('mousedown', downFunc)
-        this._container.removeEventListener('mouseup', upFunc)
-        moveFunc = null
-        downFunc = null
-        upFunc = null
-        this._initResizer()
-      }
-    }
-  }
-
-  _initResizer () {
-    this._destroyResizer()
+    this._container.append(this._snipper)
     this._resizer = document.createElement('div')
     this._resizer.classList.add('screenshot-snipper-resizer')
     this._snipper.append(this._resizer)
   }
 
-  _destroyResizer () {
-    if (this._resizer) {
-      this._resizer.remove()
-      delete this._resizer
+  _initSnipperEvent () {
+    _addDragEvent({
+      node: this._container,
+      downCallback: () => {
+        this._snipper.style.borderColor = 'rgba(0,0,0,0.6)'
+        this._snipper.style.cursor = 'crosshair'
+        this._destroyResizer()
+        this._destroyDrawer()
+        this._snipInfo = {}
+      },
+      moveCallback: ({ endPosition, startPosition }) => {
+        const snipperBorderWidth = parseFloat(this._snipper.style.borderWidth)
+        this._snipInfo = {
+          width: Math.abs(endPosition.x - startPosition.x),
+          height: Math.abs(endPosition.y - startPosition.y),
+          left: Math.min(endPosition.x, startPosition.x) - this._container.offsetLeft,
+          top: Math.min(endPosition.y, startPosition.y) - this._container.offsetTop
+        }
+        this._snipper.style.width = this._snipInfo.width + 'px'
+        this._snipper.style.height = this._snipInfo.height + 'px'
+        this._snipper.style.transform = `matrix(1,0,0,1,${
+          this._snipInfo.left - snipperBorderWidth
+        },${this._snipInfo.top - snipperBorderWidth})`
+      },
+      upCallback: () => {
+        this._snipper.style.cursor = 'default'
+        this._initResizer()
+        let originLeft, originTop
+        _addDragEvent({
+          node: this._resizer,
+          upNode: this._container,
+          moveNode: this._container,
+          last: true,
+          downCallback: () => {
+            this._destroyResizer()
+            this._destroyDrawer()
+            originLeft = this._snipInfo.left
+            originTop = this._snipInfo.top
+          },
+          moveCallback: ({ endPosition, startPosition }) => {
+            const snipperBorderWidth = parseFloat(this._snipper.style.borderWidth)
+            const left = originLeft + endPosition.x - startPosition.x
+            const top = originTop + endPosition.y - startPosition.y
+            const containerStyle = window.getComputedStyle(this._container)
+            const containerWidth = parseFloat(containerStyle.width)
+            const containerHeight = parseFloat(containerStyle.height)
+            this._snipInfo.left = left >= 0 ? (left + this._snipInfo.width <= containerWidth ? left : containerWidth - this._snipInfo.width) : 0
+            this._snipInfo.top = top >= 0 ? (top + this._snipInfo.height <= containerHeight ? top : containerHeight - this._snipInfo.height) : 0
+            this._snipper.style.transform = `matrix(1,0,0,1,${
+              this._snipInfo.left - snipperBorderWidth
+            },${this._snipInfo.top - snipperBorderWidth})`
+          },
+          upCallback: () => {
+            this._initResizer()
+          }
+        })
+      }
+    })
+  }
+
+  _initResizer () {
+    this._destroyResizer()
+    const wrapper = document.createElement('div')
+    wrapper.classList.add('screenshot-snipper-resizer-wrapper')
+    for (const direction of ['top', 'topright', 'right', 'bottomright', 'bottom', 'bottomleft', 'left', 'topleft']) {
+      const resizer = document.createElement('div')
+      resizer.classList.add('screenshot-snipper-resizer-item')
+      resizer.classList.add(`screenshot-snipper-resizer-${direction}`)
+      wrapper.append(resizer)
     }
+    this._resizer.append(wrapper)
+  }
+
+  _destroyResizer () {
+    _clearDom(this._resizer)
   }
 
   _initDrawer () {
@@ -222,7 +238,7 @@ export default class ScreenShot {
     this._drawer.style.width = this._snipInfo.width + 'px'
     this._drawer.style.height = this._snipInfo.height + 'px'
     this._drawer.style.transform = `matrix(1,0,0,1,${this._snipInfo.x},${this._snipInfo.y})`
-    this._container.appendChild(this._drawer)
+    this._container.append(this._drawer)
     this._initDrawerEvent()
   }
 
@@ -239,30 +255,89 @@ export default class ScreenShot {
       e.stopPropagation()
     })
   }
+}
 
-  /**
-   * 清空节点
-   * @param {HTMLElement} node
-   */
-  _clearDom (node) {
-    if (!(node instanceof window.HTMLElement)) {
-      throw new Error('node must be HTMLElement')
-    }
-    while (node.firstChild) {
-      node.removeChild(node.lastChild)
-    }
+/**
+ * 清空节点
+ * @param {HTMLElement} node
+ */
+function _clearDom (node) {
+  if (!(node instanceof window.HTMLElement)) {
+    throw new Error('node must be HTMLElement')
+  }
+  while (node.firstChild) {
+    node.removeChild(node.lastChild)
+  }
+}
+
+function _addDragEvent ({ node, moveNode, upNode, moveCallback = () => {}, downCallback = () => {}, upCallback = () => {}, last = false } = {}) {
+  if (!(node instanceof window.HTMLElement)) {
+    throw new Error('node must be HTMLElement')
   }
 
-  destroy (callback = () => {}) {
-    this._clearDom(this._node)
-    delete this._node.__SCREEN_SHOT_GENERATED__
-    delete this._node
-    delete this._container
-    delete this._img
-    delete this._snipper
-    delete this._resizer
-    delete this._snipInfo
-    delete this._drawer
-    callback()
+  let startPosition
+  upNode = upNode || node
+  moveNode = moveNode || node
+
+  node.addEventListener('click', () => {})
+  node.addEventListener('mousedown', _handleMouseDown)
+  upNode.addEventListener('mouseup', _handleMouseUp)
+
+  function _handleMouseDown (e) {
+    e.stopPropagation()
+    e.preventDefault()
+    startPosition = {
+      x: e.clientX,
+      y: e.clientY
+    }
+    moveNode.addEventListener('mousemove', _handleMouseMove)
+    downCallback({ startPosition })
+  }
+
+  function _handleMouseMove (e) {
+    e.stopPropagation()
+    e.preventDefault()
+    moveCallback({
+      startPosition,
+      endPosition: {
+        x: e.clientX,
+        y: e.clientY
+      }
+    })
+  }
+
+  function _handleMouseUp (e) {
+    e.stopPropagation()
+    e.preventDefault()
+    if (!startPosition) {
+      return
+    }
+    moveNode.removeEventListener('mousemove', _handleMouseMove)
+    if (!last) {
+      node.removeEventListener('mousedown', _handleMouseDown)
+      upNode.removeEventListener('mouseup', _handleMouseUp)
+    }
+    upCallback({
+      startPosition,
+      endPosition: {
+        x: e.clientX,
+        y: e.clientY
+      }
+    })
+    startPosition = null
+  }
+
+  function stop () {
+    last = false
+    moveNode.removeEventListener('mousemove', _handleMouseMove)
+    if (!last) {
+      node.removeEventListener('mousedown', _handleMouseDown)
+      upNode.removeEventListener('mouseup', _handleMouseUp)
+    }
+    startPosition = null
+  }
+
+  return {
+    stop
   }
 }
