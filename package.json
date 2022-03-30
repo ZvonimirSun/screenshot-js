@@ -13,6 +13,11 @@
     "type": "git",
     "url": "git+https://github.com/ZvonimirSun/screenshot-js.git"
   },
+  "files": [
+    "/dist/screenshot.umd.js",
+    "/dist/screenshot.umd.js.map",
+    "/dist/screenshot.umd.js.LICENSE.txt"
+  ],
   "author": "ZvonimirSun",
   "license": "GPL-3.0",
   "bugs": {
