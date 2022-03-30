@@ -170,11 +170,12 @@ export default class ScreenShot {
       },
       moveCallback: ({ endPosition, startPosition }) => {
         const snipperBorderWidth = parseFloat(this._snipper.style.borderWidth)
+        const bounding = this._container.getBoundingClientRect()
         this._snipInfo = {
           width: Math.abs(endPosition.x - startPosition.x),
           height: Math.abs(endPosition.y - startPosition.y),
-          left: Math.min(endPosition.x, startPosition.x) - this._container.clientLeft,
-          top: Math.min(endPosition.y, startPosition.y) - this._container.clientTop
+          left: Math.min(endPosition.x, startPosition.x) - bounding.x,
+          top: Math.min(endPosition.y, startPosition.y) - bounding.y
         }
         this._snipper.style.width = this._snipInfo.width + 'px'
         this._snipper.style.height = this._snipInfo.height + 'px'
