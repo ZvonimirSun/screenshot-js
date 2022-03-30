@@ -434,7 +434,9 @@ export default class ScreenShot {
     this._drawer.width = this._snipInfo.width
     this._drawer.height = this._snipInfo.height
     const context = this._drawer.getContext('2d')
-    context.drawImage(this._originImg, this._snipInfo.left, this._snipInfo.top, this._snipInfo.width, this._snipInfo.height, 0, 0, this._snipInfo.width, this._snipInfo.height)
+    const widthScale = this._originImg.naturalWidth / this._originImg.width
+    const heightScale = this._originImg.naturalHeight / this._originImg.height
+    context.drawImage(this._originImg, this._snipInfo.left * widthScale, this._snipInfo.top * heightScale, this._snipInfo.width * widthScale, this._snipInfo.height * heightScale, 0, 0, this._snipInfo.width, this._snipInfo.height)
     this._snipper.append(this._drawer)
   }
 
