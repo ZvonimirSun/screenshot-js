@@ -1,16 +1,7 @@
 async function test() {
-  const blob = await ScreenShot.getImage({
-    node: document.getElementById("test"),
-  });
-  const url = URL.createObjectURL(blob);
-  const img = document.createElement("img");
-  img.src = url;
-
-  document.getElementsByClassName("editor")[0].style.display = "block";
-
   window.screenShotInstance = new ScreenShot({
     node: document.getElementsByClassName("editor")[0],
-    img,
+    img: "https://img.iszy.xyz/1648524178925.png?x-oss-process=style/big",
   });
 }
 
