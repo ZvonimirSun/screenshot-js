@@ -15,7 +15,8 @@ module.exports = {
   },
   devtool: isProduction ? false : 'source-map',
   devServer: {
-    static: './dist'
+    static: './dist',
+    port: 8080
   },
   optimization: {
     minimize: true,
