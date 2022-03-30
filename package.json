@@ -57,6 +57,12 @@
     ]
   },
   "dependencies": {
-    "dom-to-image": "^2.6.0"
-  }
+    "dom-to-image": "^2.6.0",
+    "file-saver": "^2.0.5",
+    "lodash-es": "^4.17.21"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 version"
+  ]
 }
