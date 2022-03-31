@@ -1,5 +1,6 @@
 import domToImage from 'dom-to-image'
 import { saveAs } from 'file-saver'
+import ScreenShotTool from './screenshot-tool'
 import './screenshot.scss'
 
 export default class ScreenShot {
@@ -543,25 +544,16 @@ export default class ScreenShot {
     }
   }
 
-  _addTool ({ name = '', iconClass = '', color = 'white', click = () => {}, disabled = false } = {}) {
-    const dom = document.createElement('div')
-    dom.classList.add('screenshot-toolbar-tool')
-    if (disabled) {
-      dom.classList.add('disabled')
+  _addTool ({ name = '', iconClass = '', color = 'white', click, disabled = false } = {}) {
+    this._tools[name] = new ScreenShotTool({ name, iconClass, color, disabled })
+    if (click) {
+      this._tools[name].events.add('click', function () {
+        if (!disabled) {
+          click()
+        }
+      })
     }
-    dom.style.color = color
-    dom.setAttribute('title', name)
-    dom.onclick = function () {
-      if (!disabled) {
-        click()
-      }
-    }
-
-    const icon = document.createElement('span')
-    icon.classList.add('icon', iconClass.trim())
-    dom.append(icon)
-
-    this._toolbar.append(dom)
+    this._toolbar.append(this._tools[name].dom)
   }
 
   _addToolDivider () {
