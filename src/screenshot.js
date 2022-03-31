@@ -1,6 +1,7 @@
 import domToImage from 'dom-to-image'
 import { saveAs } from 'file-saver'
 import ScreenShotTool from './screenshot-tool'
+import { fabric } from 'fabric'
 import './screenshot.scss'
 
 export default class ScreenShot {
@@ -358,8 +359,8 @@ export default class ScreenShot {
       upCallback: () => {
         snipper.style.cursor = 'default'
         this._initResizer()
-        this._initToolbar()
         this._initDrawer()
+        this._initToolbar()
         let originLeft, originTop
         this._events.resizerEvent = _addDragEvent({
           node: resizer,
@@ -387,8 +388,8 @@ export default class ScreenShot {
           },
           upCallback: () => {
             this._initResizer()
-            this._initToolbar()
             this._initDrawer()
+            this._initToolbar()
           }
         })
       }
@@ -472,29 +473,12 @@ export default class ScreenShot {
     // this._addTool({ name: '矩形', iconClass: 'icon-square' })
     // todo 绘制椭圆
     // this._addTool({ name: '椭圆', iconClass: 'icon-circle' })
-    this._addTool({
-      name: '画笔',
-      iconClass: 'icon-write',
-      click: () => {
-        this._stopResize()
-      }
-    })
-    this._addTool({
-      name: '马赛克',
-      iconClass: 'icon-mosaic',
-      click: () => {
-        this._stopResize()
-      }
-    })
-    this._addTool({
-      name: '文本',
-      iconClass: 'icon-text',
-      click: () => {
-        this._stopResize()
-      }
-    })
+    this._addToolWrite()
+    this._addToolMosaic()
+    this._addToolText()
     this._addToolDivider()
-    this._addTool({ name: '撤销', iconClass: 'icon-return', disabled: true })
+    // todo 撤销修改
+    // this._addTool({ name: '撤销', iconClass: 'icon-return', disabled: true })
     this._addTool({
       name: '保存图片',
       iconClass: 'icon-download',
@@ -554,12 +538,46 @@ export default class ScreenShot {
       })
     }
     this._toolbar.append(this._tools[name].dom)
+    return this._tools[name]
   }
 
   _addToolDivider () {
     const dom = document.createElement('div')
     dom.classList.add('screenshot-toolbar-divider')
     this._toolbar.append(dom)
+  }
+
+  _addToolWrite () {
+    this._addTool({
+      name: '画笔',
+      iconClass: 'icon-write',
+      click: () => {
+        this._initDrawEvent()
+      }
+    })
+  }
+
+  _addToolMosaic () {
+    this._addTool({
+      name: '马赛克',
+      iconClass: 'icon-mosaic',
+      click: () => {
+        this._initDrawEvent()
+      }
+    })
+  }
+
+  _addToolText () {
+    const tool = this._addTool({
+      name: '文本',
+      iconClass: 'icon-text',
+      click: () => {
+        if (!tool.disabled) {
+          this._initDrawEvent()
+          tool.active = !tool.active
+        }
+      }
+    })
   }
   // endregion
 
@@ -574,6 +592,16 @@ export default class ScreenShot {
     const heightScale = this._originImg.naturalHeight / this._originImg.height
     context.drawImage(this._originImg, this._snipInfo.left * widthScale, this._snipInfo.top * heightScale, this._snipInfo.width * widthScale, this._snipInfo.height * heightScale, 0, 0, this._snipInfo.width, this._snipInfo.height)
     this._snipper.append(this._drawer)
+  }
+
+  _initDrawEvent () {
+    this._stopResize()
+    if (!this._events.drawEvent) {
+      this._events.drawEvent = new fabric.Canvas(this._drawer)
+    } else {
+      this._events.drawEvent.wrapperEl.remove()
+      this._events.drawEvent = new fabric.Canvas(this._drawer)
+    }
   }
   // endregion
 }

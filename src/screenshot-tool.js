@@ -34,9 +34,24 @@ export default class ScreenShotTool {
   set disabled (val) {
     this._disabled = !!val
     if (val) {
+      this.active = false
       this.dom?.classList.add('disabled')
     } else {
       this.dom?.classList.remove('disabled')
+    }
+  }
+
+  get active () {
+    return this._active
+  }
+
+  set active (val) {
+    this._active = !!val
+    if (val) {
+      this.disabled = false
+      this.dom?.classList.add('active')
+    } else {
+      this.dom?.classList.remove('active')
     }
   }
 
