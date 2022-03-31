@@ -22,6 +22,8 @@
 
 /*! ./screenshot.scss */
 
+/*! Fabric.js Copyright 2008-2015, Printio (Juriy Zaytsev, Maxim Chernyak) */
+
 /*! data:image/svg+xml;utf8,%3C?xml version=%271.0%27 encoding=%27UTF-8%27?%3E%3Csvg viewBox=%270 0 48 48%27 fill=%27none%27 xmlns=%27http://www.w3.org/2000/svg%27%3E%3Ccircle cx=%2724%27 cy=%2724%27 r=%2720%27 stroke=%27%23333%27 stroke-width=%274%27/%3E%3C/svg%3E */
 
 /*! data:image/svg+xml;utf8,%3C?xml version=%271.0%27 encoding=%27UTF-8%27?%3E%3Csvg viewBox=%270 0 48 48%27 fill=%27none%27 xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cpath d=%27M12.9998 8L6 14L12.9998 21%27 stroke=%27%23333%27 stroke-width=%274%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27/%3E%3Cpath d=%27M6 14H28.9938C35.8768 14 41.7221 19.6204 41.9904 26.5C42.2739 33.7696 36.2671 40 28.9938 40H11.9984%27 stroke=%27%23333%27 stroke-width=%274%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27/%3E%3C/svg%3E */
@@ -42,7 +44,19 @@
 
 /*! dom-to-image */
 
+/*! fabric */
+
 /*! file-saver */
+
+/*! jsdom */
+
+/*! jsdom/lib/jsdom/living/generated/utils */
+
+/*! jsdom/lib/jsdom/utils */
+
+/*!***********************!*\
+  !*** jsdom (ignored) ***!
+  \***********************/
 
 /*!***************************!*\
   !*** ./src/screenshot.js ***!
@@ -55,6 +69,14 @@
 /*!********************************!*\
   !*** ./src/screenshot-tool.js ***!
   \********************************/
+
+/*!***************************************!*\
+  !*** jsdom/lib/jsdom/utils (ignored) ***!
+  \***************************************/
+
+/*!********************************************!*\
+  !*** ./node_modules/fabric/dist/fabric.js ***!
+  \********************************************/
 
 /*!*****************************************************!*\
   !*** ./node_modules/css-loader/dist/runtime/api.js ***!
@@ -70,6 +92,10 @@
 
 /*!********************************************************!*\
   !*** ./node_modules/css-loader/dist/runtime/getUrl.js ***!
+  \********************************************************/
+
+/*!********************************************************!*\
+  !*** jsdom/lib/jsdom/living/generated/utils (ignored) ***!
   \********************************************************/
 
 /*!************************************************************!*\
