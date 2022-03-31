@@ -22,6 +22,16 @@
 
 /*! ./screenshot.scss */
 
+/*! @babel/runtime/helpers/asyncToGenerator */
+
+/*! @babel/runtime/helpers/classCallCheck */
+
+/*! @babel/runtime/helpers/createClass */
+
+/*! @babel/runtime/helpers/defineProperty */
+
+/*! @babel/runtime/regenerator */
+
 /*! Fabric.js Copyright 2008-2015, Printio (Juriy Zaytsev, Maxim Chernyak) */
 
 /*! data:image/svg+xml;utf8,%3C?xml version=%271.0%27 encoding=%27UTF-8%27?%3E%3Csvg viewBox=%270 0 48 48%27 fill=%27none%27 xmlns=%27http://www.w3.org/2000/svg%27%3E%3Ccircle cx=%2724%27 cy=%2724%27 r=%2720%27 stroke=%27%23333%27 stroke-width=%274%27/%3E%3C/svg%3E */
@@ -54,6 +64,8 @@
 
 /*! jsdom/lib/jsdom/utils */
 
+/*! regenerator-runtime */
+
 /*!***********************!*\
   !*** jsdom (ignored) ***!
   \***********************/
@@ -82,6 +94,10 @@
   !*** ./node_modules/css-loader/dist/runtime/api.js ***!
   \*****************************************************/
 
+/*!*****************************************************!*\
+  !*** ./node_modules/regenerator-runtime/runtime.js ***!
+  \*****************************************************/
+
 /*!*******************************************************!*\
   !*** ./node_modules/dom-to-image/src/dom-to-image.js ***!
   \*******************************************************/
@@ -98,6 +114,10 @@
   !*** jsdom/lib/jsdom/living/generated/utils (ignored) ***!
   \********************************************************/
 
+/*!**********************************************************!*\
+  !*** ./node_modules/@babel/runtime/regenerator/index.js ***!
+  \**********************************************************/
+
 /*!************************************************************!*\
   !*** ./node_modules/css-loader/dist/runtime/sourceMaps.js ***!
   \************************************************************/
@@ -106,9 +126,25 @@
   !*** ./node_modules/style-loader/dist/runtime/styleDomAPI.js ***!
   \***************************************************************/
 
+/*!****************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/esm/createClass.js ***!
+  \****************************************************************/
+
+/*!*******************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/esm/classCallCheck.js ***!
+  \*******************************************************************/
+
+/*!*******************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/esm/defineProperty.js ***!
+  \*******************************************************************/
+
 /*!********************************************************************!*\
   !*** ./node_modules/style-loader/dist/runtime/insertBySelector.js ***!
   \********************************************************************/
+
+/*!*********************************************************************!*\
+  !*** ./node_modules/@babel/runtime/helpers/esm/asyncToGenerator.js ***!
+  \*********************************************************************/
 
 /*!*********************************************************************!*\
   !*** ./node_modules/style-loader/dist/runtime/styleTagTransform.js ***!
