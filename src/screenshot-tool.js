@@ -1,5 +1,5 @@
 export default class ScreenShotTool {
-  constructor ({ name = '', iconClass, color = 'white', disabled = false } = {}) {
+  constructor ({ name = '', iconClass, color = 'white', disabled = false, active = false } = {}) {
     this._dom = document.createElement('div')
     this._dom.classList.add('screenshot-toolbar-tool')
     this._initEvents()
@@ -7,6 +7,7 @@ export default class ScreenShotTool {
     this.name = name
     this.color = color
     this.disabled = disabled
+    this.active = active
     this.iconClass = iconClass
   }
 

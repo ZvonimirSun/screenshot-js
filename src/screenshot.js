@@ -133,10 +133,14 @@ export default class ScreenShot {
     return this._child?.originImg
   }
 
+  get canvas () {
+    return this._events?.drawEvent || this._drawer
+  }
+
   get img () {
-    if (this._child?.drawer) {
+    if (this.canvas) {
       const img = new window.Image()
-      img.src = this._child.drawer.toDataURL()
+      img.src = this.canvas.toDataURL()
       return img
     } else {
       return null
@@ -404,11 +408,12 @@ export default class ScreenShot {
     wrapper.classList.add('screenshot-resizer-wrapper')
     const container = this._container
     const resizer = this._resizer
+    this._events.resizerItemEvents = []
     for (const direction of ['top', 'topright', 'right', 'bottomright', 'bottom', 'bottomleft', 'left', 'topleft']) {
       const resizerItem = document.createElement('div')
       resizerItem.classList.add('screenshot-resizer-item', `screenshot-resizer-${direction}`)
       let _snipInfo
-      _addDragEvent({
+      this._events.resizerItemEvents.push(_addDragEvent({
         node: resizerItem,
         upNode: container,
         moveNode: container,
@@ -444,13 +449,19 @@ export default class ScreenShot {
           this._initDrawer()
           resizer.style.cursor = 'move'
         }
-      })
+      }))
       wrapper.append(resizerItem)
     }
     resizer.append(wrapper)
   }
 
   _destroyResizer () {
+    if (this._events.resizerItemEvents) {
+      for (const event of this._events.resizerItemEvents) {
+        event.stop()
+      }
+    }
+    delete this._events.resizerItemEvents
     _clearDom(this._resizer)
   }
 
@@ -460,7 +471,33 @@ export default class ScreenShot {
       this._events.resizerEvent.stop()
       delete this._events.resizerEvent
     }
-    this._resizer.style.cursor = 'default'
+    this._resizer.remove()
+  }
+  // endregion
+
+  // region drawer
+  _initDrawer () {
+    this._drawer = document.createElement('canvas')
+    this._drawer.classList.add('screenshot-drawer')
+    this._drawer.width = this._snipInfo.width
+    this._drawer.height = this._snipInfo.height
+    const context = this._drawer.getContext('2d')
+    const widthScale = this._originImg.naturalWidth / this._originImg.width
+    const heightScale = this._originImg.naturalHeight / this._originImg.height
+    context.drawImage(this._originImg, this._snipInfo.left * widthScale, this._snipInfo.top * heightScale, this._snipInfo.width * widthScale, this._snipInfo.height * heightScale, 0, 0, this._snipInfo.width, this._snipInfo.height)
+    this._snipper.append(this._drawer)
+  }
+
+  _initDrawEvent () {
+    this._stopResize()
+    const data = this.img
+    if (!this._events.drawEvent) {
+      const canvas = this._events.drawEvent = new fabric.Canvas(this._drawer)
+      canvas.setBackgroundImage(
+        data.src,
+        canvas.renderAll.bind(canvas)
+      )
+    }
   }
   // endregion
 
@@ -473,9 +510,28 @@ export default class ScreenShot {
     // this._addTool({ name: '矩形', iconClass: 'icon-square' })
     // todo 绘制椭圆
     // this._addTool({ name: '椭圆', iconClass: 'icon-circle' })
-    this._addToolWrite()
-    this._addToolMosaic()
-    this._addToolText()
+    const toolsConf = [{
+      name: '画笔',
+      iconClass: 'icon-write'
+    }, {
+      name: '马赛克',
+      iconClass: 'icon-mosaic'
+    }, {
+      name: '文本',
+      iconClass: 'icon-text'
+    }]
+    for (const { name, iconClass } of toolsConf) {
+      const tool = this._addTool({
+        name,
+        iconClass,
+        click: () => {
+          if (!tool.disabled) {
+            this._initDrawEvent()
+            this._switchActiveTool(tool)
+          }
+        }
+      })
+    }
     this._addToolDivider()
     // todo 撤销修改
     // this._addTool({ name: '撤销', iconClass: 'icon-return', disabled: true })
@@ -483,7 +539,7 @@ export default class ScreenShot {
       name: '保存图片',
       iconClass: 'icon-download',
       click: () => {
-        this._drawer.toBlob((blob) => {
+        dataURLToBlob(this.canvas.toDataURL()).then((blob) => {
           saveAs(blob, 'clip.png')
           this.destroy()
         })
@@ -502,7 +558,7 @@ export default class ScreenShot {
       iconClass: 'icon-check',
       color: 'green',
       click: () => {
-        this._drawer.toBlob((blob) => {
+        dataURLToBlob(this.canvas.toDataURL()).then((blob) => {
           const data = [
             new window.ClipboardItem({
               [blob.type]: blob
@@ -547,60 +603,43 @@ export default class ScreenShot {
     this._toolbar.append(dom)
   }
 
-  _addToolWrite () {
-    this._addTool({
-      name: '画笔',
-      iconClass: 'icon-write',
-      click: () => {
-        this._initDrawEvent()
-      }
-    })
-  }
-
-  _addToolMosaic () {
-    this._addTool({
-      name: '马赛克',
-      iconClass: 'icon-mosaic',
-      click: () => {
-        this._initDrawEvent()
-      }
-    })
-  }
-
-  _addToolText () {
-    const tool = this._addTool({
-      name: '文本',
-      iconClass: 'icon-text',
-      click: () => {
-        if (!tool.disabled) {
-          this._initDrawEvent()
-          tool.active = !tool.active
+  _switchActiveTool (tool) {
+    const canvas = this._events.drawEvent
+    tool.active = !tool.active
+    if (tool.active) {
+      this._openTool(tool.name)
+      for (const name in this._tools) {
+        if (name !== tool.name) {
+          this._tools[name].active = false
+          this._closeTool(name)
         }
       }
-    })
-  }
-  // endregion
-
-  // region drawer
-  _initDrawer () {
-    this._drawer = document.createElement('canvas')
-    this._drawer.classList.add('screenshot-drawer')
-    this._drawer.width = this._snipInfo.width
-    this._drawer.height = this._snipInfo.height
-    const context = this._drawer.getContext('2d')
-    const widthScale = this._originImg.naturalWidth / this._originImg.width
-    const heightScale = this._originImg.naturalHeight / this._originImg.height
-    context.drawImage(this._originImg, this._snipInfo.left * widthScale, this._snipInfo.top * heightScale, this._snipInfo.width * widthScale, this._snipInfo.height * heightScale, 0, 0, this._snipInfo.width, this._snipInfo.height)
-    this._snipper.append(this._drawer)
-  }
-
-  _initDrawEvent () {
-    this._stopResize()
-    if (!this._events.drawEvent) {
-      this._events.drawEvent = new fabric.Canvas(this._drawer)
     } else {
-      this._events.drawEvent.wrapperEl.remove()
-      this._events.drawEvent = new fabric.Canvas(this._drawer)
+      this._closeTool(tool.name)
+    }
+  }
+
+  _openTool (name) {
+    const canvas = this._events.drawEvent
+    switch (name) {
+      case '画笔': {
+        // 设置画笔颜色
+        canvas.freeDrawingBrush.color = 'red'
+        // 设置画笔粗细
+        canvas.freeDrawingBrush.width = 5
+        canvas.isDrawingMode = true
+        break
+      }
+    }
+  }
+
+  _closeTool (name) {
+    const canvas = this._events.drawEvent
+    switch (name) {
+      case '画笔': {
+        canvas.isDrawingMode = false
+        break
+      }
     }
   }
   // endregion
@@ -628,10 +667,12 @@ function _addDragEvent ({ node, moveNode, upNode, moveCallback = () => {}, downC
   upNode = upNode || node
   moveNode = moveNode || node
 
-  node.addEventListener('click', () => {})
+  node.addEventListener('click', _empty)
   node.addEventListener('mousedown', _handleMouseDown)
   upNode.addEventListener('mouseup', _handleMouseUp)
   let flag = true
+
+  function _empty () {}
 
   function _handleMouseDown (e) {
     e.stopPropagation()
@@ -667,6 +708,7 @@ function _addDragEvent ({ node, moveNode, upNode, moveCallback = () => {}, downC
     }
     moveNode.removeEventListener('mousemove', _handleMouseMove)
     if (!last) {
+      node.removeEventListener('click', _empty)
       node.removeEventListener('mousedown', _handleMouseDown)
       upNode.removeEventListener('mouseup', _handleMouseUp)
     }
@@ -684,10 +726,9 @@ function _addDragEvent ({ node, moveNode, upNode, moveCallback = () => {}, downC
   function stop () {
     last = false
     moveNode.removeEventListener('mousemove', _handleMouseMove)
-    if (!last) {
-      node.removeEventListener('mousedown', _handleMouseDown)
-      upNode.removeEventListener('mouseup', _handleMouseUp)
-    }
+    node.removeEventListener('click', _empty)
+    node.removeEventListener('mousedown', _handleMouseDown)
+    upNode.removeEventListener('mouseup', _handleMouseUp)
     startPosition = null
   }
 
@@ -698,4 +739,8 @@ function _addDragEvent ({ node, moveNode, upNode, moveCallback = () => {}, downC
 
 function log (msg) {
   console.log('[' + new Date().toLocaleString('zh', { hour12: false }) + '] ', msg)
+}
+
+async function dataURLToBlob (dataURI) {
+  return await (await window.fetch(dataURI)).blob()
 }
