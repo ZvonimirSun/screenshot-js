@@ -6,16 +6,18 @@ const isProduction = !!process.env.production
 module.exports = {
   // 入口，是一个对象
   entry: './src/screenshot.js',
+  mode: 'development',
   output: {
     library: 'ScreenShot',
     libraryTarget: 'umd',
     libraryExport: 'default',
     path: path.resolve(__dirname, 'dist'),
-    filename: 'screenshot.umd.js'
+    filename: 'screenshot.umd.js',
+    clean: true
   },
-  devtool: isProduction ? false : 'source-map',
+  devtool: 'source-map',
   devServer: {
-    static: './dist',
+    static: './test',
     port: 8080
   },
   optimization: {
@@ -23,7 +25,7 @@ module.exports = {
     minimizer: [new TerserPlugin({
       test: /\.m?js(\?.*)?$/i,
       terserOptions: {
-        sourceMap: !isProduction,
+        sourceMap: true,
         compress: {
           drop_console: !!isProduction,
           drop_debugger: !!isProduction

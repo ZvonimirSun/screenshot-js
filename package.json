@@ -5,8 +5,8 @@
   "main": "./dist/screenshot.umd.js",
   "scripts": {
     "start": "webpack-dev-server --mode development --config ./webpack.config.js",
-    "build:prod": "cross-env production=true webpack --mode=production",
-    "build:test": "webpack --mode=development",
+    "build:prod": "cross-env production=true webpack",
+    "build:test": "webpack",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -14,9 +14,7 @@
     "url": "git+https://github.com/ZvonimirSun/screenshot-js.git"
   },
   "files": [
-    "/dist/screenshot.umd.js",
-    "/dist/screenshot.umd.js.map",
-    "/dist/screenshot.umd.js.LICENSE.txt"
+    "/dist"
   ],
   "author": "ZvonimirSun",
   "license": "GPL-3.0",
