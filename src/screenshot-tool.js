@@ -1,6 +1,6 @@
-import ScreenShotToolEvent from './screenshot-tool-event'
+import ScreenshotToolEvent from './screenshot-tool-event'
 
-export default class ScreenShotTool {
+export default class ScreenshotTool {
   /**
    * 工具名称
    * @type {string}
@@ -25,7 +25,7 @@ export default class ScreenShotTool {
 
   /**
    * 事件管理器
-   * @type ScreenShotToolEvent
+   * @type ScreenshotToolEvent
    */
   #events
   /**
@@ -51,7 +51,7 @@ export default class ScreenShotTool {
   #iconNode
 
   /**
-   * ScreenShot constructor
+   * Screenshot constructor
    * @param name {string} 名称
    * @param iconClass {string} 图标类
    * @param [color='white'] {string} 图标默认颜色
@@ -157,6 +157,6 @@ export default class ScreenShotTool {
   }
 
   #initEvents () {
-    this.#events = new ScreenShotToolEvent(this.node)
+    this.#events = new ScreenshotToolEvent(this.node)
   }
 }

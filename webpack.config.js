@@ -8,7 +8,7 @@ module.exports = {
   entry: './src/screenshot.js',
   mode: 'development',
   output: {
-    library: 'ScreenShot',
+    library: 'Screenshot',
     libraryTarget: 'umd',
     libraryExport: 'default',
     path: path.resolve(__dirname, 'dist'),

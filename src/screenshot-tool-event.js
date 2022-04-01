@@ -1,6 +1,6 @@
 import { removeAll } from './utils.js'
 
-export default class ScreenShotToolEvent {
+export default class ScreenshotToolEvent {
   #list = {}
   /**
    * 工具节点
