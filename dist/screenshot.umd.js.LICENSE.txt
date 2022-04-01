@@ -24,11 +24,15 @@
 
 /*! ./classExtractFieldDescriptor.js */
 
+/*! ./screenshot-fabric-event.js */
+
 /*! ./screenshot-tool */
 
 /*! ./screenshot-tool-event */
 
 /*! ./screenshot.scss */
+
+/*! ./utils.js */
 
 /*! @babel/runtime/helpers/asyncToGenerator */
 
@@ -78,6 +82,10 @@
 
 /*! regenerator-runtime */
 
+/*!**********************!*\
+  !*** ./src/utils.js ***!
+  \**********************/
+
 /*!***********************!*\
   !*** jsdom (ignored) ***!
   \***********************/
@@ -101,6 +109,10 @@
 /*!***************************************!*\
   !*** jsdom/lib/jsdom/utils (ignored) ***!
   \***************************************/
+
+/*!****************************************!*\
+  !*** ./src/screenshot-fabric-event.js ***!
+  \****************************************/
 
 /*!********************************************!*\
   !*** ./node_modules/fabric/dist/fabric.js ***!
