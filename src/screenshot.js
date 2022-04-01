@@ -553,6 +553,19 @@ export default class Screenshot {
         this.#canvas.renderAll.bind(this.#canvas)
       )
       this.#events.drawEvent = new ScreenshotFabricEvent(this.#canvas)
+      this.#events.drawEvent.add('object:added', ({ target }) => {
+        target.setControlsVisibility({
+          tl: false,
+          tr: false,
+          br: false,
+          bl: false,
+          ml: false,
+          mt: false,
+          mr: false,
+          mb: false,
+          mtr: false
+        })
+      })
     }
   }
 
@@ -666,7 +679,6 @@ export default class Screenshot {
       pauseEvent: () => {
         this.#canvas.isDrawingMode = false
         this.#canvas.selection = true
-        this.#canvas.discardActiveObject()?.renderAll()
       }
     })
   }
@@ -691,7 +703,6 @@ export default class Screenshot {
       pauseEvent: () => {
         this.#canvas.defaultCursor = 'default'
         this.#canvas.selection = true
-        this.#canvas.discardActiveObject()?.renderAll()
         this.#events.drawEvent.remove('mouse:down', event)
       }
     })
@@ -718,6 +729,17 @@ export default class Screenshot {
       })
       this.#switchActiveTool(tool)
       this.#canvas.add(textbox)
+      textbox.setControlsVisibility({
+        tl: false,
+        tr: false,
+        br: false,
+        bl: false,
+        ml: true,
+        mt: false,
+        mr: true,
+        mb: false,
+        mtr: false
+      })
       this.#canvas.setActiveObject(textbox)
       this.#canvas.renderAll()
     }
