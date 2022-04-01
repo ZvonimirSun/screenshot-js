@@ -160,6 +160,10 @@ export default class Screenshot {
     }
   }
 
+  get canvas () {
+    return this.#canvas
+  }
+
   get #snipInfo () {
     return this.#infos.snipInfo || {}
   }
@@ -376,6 +380,8 @@ export default class Screenshot {
     this.#originImg = originImg
     originImg.classList.add('screenshot-image')
     this.#container.append(originImg)
+    this.#container.style.width = `${originImg.width}px`
+    this.#container.style.height = `${originImg.height}px`
     log('Screenshot 图片容器创建完成')
   }
 
