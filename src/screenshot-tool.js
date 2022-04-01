@@ -1,5 +1,15 @@
 export default class ScreenShotTool {
-  constructor ({ name = '', iconClass, color = 'white', disabled = false, active = false } = {}) {
+  /**
+   * ScreenShot constructor
+   * @param name {string} 名称
+   * @param iconClass {string} 图标类
+   * @param [color='white'] {string} 图标默认颜色
+   * @param [disabled] {boolean} 是否禁用
+   * @param [clickEvent] {function} 点击方法
+   * @param [activeEvent] {function} 激活方法
+   * @param [pauseEvent] {function} 取消激活方法
+   */
+  constructor ({ name = '', iconClass, color = 'white', disabled = false, clickEvent, activeEvent, pauseEvent } = {}) {
     this._dom = document.createElement('div')
     this._dom.classList.add('screenshot-toolbar-tool')
     this._initEvents()
@@ -7,8 +17,13 @@ export default class ScreenShotTool {
     this.name = name
     this.color = color
     this.disabled = disabled
-    this.active = active
+    this.active = false
     this.iconClass = iconClass
+    this._activeEvent = activeEvent
+    this._pauseEvent = pauseEvent
+    if (clickEvent) {
+      this.events.add('click', clickEvent)
+    }
   }
 
   get dom () {
@@ -47,12 +62,21 @@ export default class ScreenShotTool {
   }
 
   set active (val) {
+    if (this.active === !!val) {
+      return
+    }
     this._active = !!val
     if (val) {
       this.disabled = false
       this.dom?.classList.add('active')
+      if (this._activeEvent) {
+        this._activeEvent()
+      }
     } else {
       this.dom?.classList.remove('active')
+      if (this._pauseEvent) {
+        this._pauseEvent()
+      }
     }
   }
 

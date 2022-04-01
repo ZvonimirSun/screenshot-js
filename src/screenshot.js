@@ -510,35 +510,16 @@ export default class ScreenShot {
     // this._addTool({ name: '矩形', iconClass: 'icon-square' })
     // todo 绘制椭圆
     // this._addTool({ name: '椭圆', iconClass: 'icon-circle' })
-    const toolsConf = [{
-      name: '画笔',
-      iconClass: 'icon-write'
-    }, {
-      name: '马赛克',
-      iconClass: 'icon-mosaic'
-    }, {
-      name: '文本',
-      iconClass: 'icon-text'
-    }]
-    for (const { name, iconClass } of toolsConf) {
-      const tool = this._addTool({
-        name,
-        iconClass,
-        click: () => {
-          if (!tool.disabled) {
-            this._initDrawEvent()
-            this._switchActiveTool(tool)
-          }
-        }
-      })
-    }
+    this._addToolWrite()
+    this._addToolMosaic()
+    this._addToolText()
     this._addToolDivider()
     // todo 撤销修改
     // this._addTool({ name: '撤销', iconClass: 'icon-return', disabled: true })
     this._addTool({
       name: '保存图片',
       iconClass: 'icon-download',
-      click: () => {
+      clickEvent: () => {
         dataURLToBlob(this.canvas.toDataURL()).then((blob) => {
           saveAs(blob, 'clip.png')
           this.destroy()
@@ -549,7 +530,7 @@ export default class ScreenShot {
       name: '退出',
       iconClass: 'icon-close',
       color: 'red',
-      click: () => {
+      clickEvent: () => {
         this.destroy()
       }
     })
@@ -557,7 +538,7 @@ export default class ScreenShot {
       name: '完成',
       iconClass: 'icon-check',
       color: 'green',
-      click: () => {
+      clickEvent: () => {
         dataURLToBlob(this.canvas.toDataURL()).then((blob) => {
           const data = [
             new window.ClipboardItem({
@@ -584,15 +565,22 @@ export default class ScreenShot {
     }
   }
 
-  _addTool ({ name = '', iconClass = '', color = 'white', click, disabled = false } = {}) {
-    this._tools[name] = new ScreenShotTool({ name, iconClass, color, disabled })
-    if (click) {
-      this._tools[name].events.add('click', function () {
-        if (!disabled) {
-          click()
-        }
-      })
-    }
+  _addTool ({ name = '', iconClass = '', color = 'white', disabled = false, clickEvent, activeEvent, pauseEvent } = {}) {
+    this._tools[name] = new ScreenShotTool({
+      name,
+      iconClass,
+      color,
+      disabled,
+      clickEvent: clickEvent
+        ? () => {
+            if (!this._tools[name].disabled) {
+              clickEvent()
+            }
+          }
+        : undefined,
+      activeEvent,
+      pauseEvent
+    })
     this._toolbar.append(this._tools[name].dom)
     return this._tools[name]
   }
@@ -603,42 +591,58 @@ export default class ScreenShot {
     this._toolbar.append(dom)
   }
 
+  _addToolWrite () {
+    const tool = this._addTool({
+      name: '画笔',
+      iconClass: 'icon-write',
+      clickEvent: () => {
+        this._initDrawEvent()
+        this._switchActiveTool(tool)
+      },
+      activeEvent: () => {
+        // 设置画笔颜色
+        this.canvas.freeDrawingBrush.color = 'red'
+        // 设置画笔粗细
+        this.canvas.freeDrawingBrush.width = 5
+        this.canvas.isDrawingMode = true
+      },
+      pauseEvent: () => {
+        this.canvas.isDrawingMode = false
+      }
+    })
+  }
+
+  _addToolMosaic () {
+    const tool = this._addTool({
+      name: '马赛克',
+      iconClass: 'icon-mosaic',
+      clickEvent: () => {
+        this._initDrawEvent()
+        this._switchActiveTool(tool)
+      }
+    })
+  }
+
+  _addToolText () {
+    const tool = this._addTool({
+      name: '文本',
+      iconClass: 'icon-text',
+      clickEvent: () => {
+        if (!tool.disabled) {
+          this._initDrawEvent()
+          this._switchActiveTool(tool)
+        }
+      }
+    })
+  }
+
   _switchActiveTool (tool) {
-    const canvas = this._events.drawEvent
     tool.active = !tool.active
     if (tool.active) {
-      this._openTool(tool.name)
       for (const name in this._tools) {
         if (name !== tool.name) {
           this._tools[name].active = false
-          this._closeTool(name)
         }
-      }
-    } else {
-      this._closeTool(tool.name)
-    }
-  }
-
-  _openTool (name) {
-    const canvas = this._events.drawEvent
-    switch (name) {
-      case '画笔': {
-        // 设置画笔颜色
-        canvas.freeDrawingBrush.color = 'red'
-        // 设置画笔粗细
-        canvas.freeDrawingBrush.width = 5
-        canvas.isDrawingMode = true
-        break
-      }
-    }
-  }
-
-  _closeTool (name) {
-    const canvas = this._events.drawEvent
-    switch (name) {
-      case '画笔': {
-        canvas.isDrawingMode = false
-        break
       }
     }
   }
