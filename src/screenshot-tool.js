@@ -1,4 +1,55 @@
+import ScreenShotToolEvent from './screenshot-tool-event'
+
 export default class ScreenShotTool {
+  /**
+   * 工具名称
+   * @type {string}
+   */
+  #name = ''
+  /**
+   * 图标颜色
+   * @type {string}
+   */
+  #color = 'white'
+
+  /**
+   * 禁用状态
+   * @type {boolean}
+   */
+  #disabled = false
+  /**
+   * 激活状态
+   * @type {boolean}
+   */
+  #active = false
+
+  /**
+   * 事件管理器
+   * @type ScreenShotToolEvent
+   */
+  #events
+  /**
+   * 激活事件
+   * @type Function
+   */
+  #activeEvent
+  /**
+   * 暂停事件
+   * @type Function
+   */
+  #pauseEvent
+
+  /**
+   * 工具节点
+   * @type HTMLElement
+   */
+  #node
+  /**
+   * 工具图标节点
+   * @type HTMLElement
+   */
+  #iconNode
+
   /**
    * ScreenShot constructor
    * @param name {string} 名称
@@ -9,166 +60,103 @@ export default class ScreenShotTool {
    * @param [activeEvent] {function} 激活方法
    * @param [pauseEvent] {function} 取消激活方法
    */
-  constructor ({ name = '', iconClass, color = 'white', disabled = false, clickEvent, activeEvent, pauseEvent } = {}) {
-    this._dom = document.createElement('div')
-    this._dom.classList.add('screenshot-toolbar-tool')
-    this._initEvents()
+  constructor ({ name, iconClass, color, disabled, clickEvent, activeEvent, pauseEvent } = {}) {
+    this.#node = document.createElement('div')
+    this.#node.classList.add('screenshot-toolbar-tool')
+    this.#initEvents()
 
-    this.name = name
-    this.color = color
-    this.disabled = disabled
-    this.active = false
-    this.iconClass = iconClass
-    this._activeEvent = activeEvent
-    this._pauseEvent = pauseEvent
+    name && (this.name = name)
+    color && (this.color = color)
+    disabled && (this.disabled = disabled)
+    iconClass && (this.iconClass = iconClass)
+    activeEvent && (this.#activeEvent = activeEvent)
+    pauseEvent && (this.#pauseEvent = pauseEvent)
     if (clickEvent) {
       this.events.add('click', clickEvent)
     }
   }
 
-  get dom () {
-    return this._dom
+  get node () {
+    return this.#node
   }
 
   get events () {
-    return this._events
+    return this.#events
   }
 
   get name () {
-    return this._name
+    return this.#name
   }
 
   set name (val) {
-    this._name = val
-    this.dom?.setAttribute('title', val)
+    this.#name = val
+    this.node?.setAttribute('title', val)
   }
 
   get disabled () {
-    return this._disabled
+    return this.#disabled
   }
 
   set disabled (val) {
-    this._disabled = !!val
+    this.#disabled = !!val
     if (val) {
       this.active = false
-      this.dom?.classList.add('disabled')
+      this.node?.classList.add('disabled')
     } else {
-      this.dom?.classList.remove('disabled')
+      this.node?.classList.remove('disabled')
     }
   }
 
   get active () {
-    return this._active
+    return this.#active
   }
 
   set active (val) {
     if (this.active === !!val) {
       return
     }
-    this._active = !!val
+    this.#active = !!val
     if (val) {
       this.disabled = false
-      this.dom?.classList.add('active')
-      if (this._activeEvent) {
-        this._activeEvent()
+      this.node?.classList.add('active')
+      if (this.#activeEvent) {
+        this.#activeEvent()
       }
     } else {
-      this.dom?.classList.remove('active')
-      if (this._pauseEvent) {
-        this._pauseEvent()
+      this.node?.classList.remove('active')
+      if (this.#pauseEvent) {
+        this.#pauseEvent()
       }
     }
   }
 
   get color () {
-    return this._color
+    return this.#color
   }
 
   set color (val) {
-    this._color = val
-    if (this.dom) {
-      this.dom.style.color = val
+    this.#color = val
+    if (this.node) {
+      this.node.style.color = val
     }
   }
 
   get iconClass () {
-    return this._iconDom.classList
+    return this.#iconNode.classList
   }
 
   set iconClass (val) {
-    if (this._iconDom) {
-      this._iconDom.remove()
+    if (this.#iconNode) {
+      this.#iconNode.remove()
     }
-    if (this.dom && val && val.trim()) {
-      this._iconDom = document.createElement('span')
-      this._iconDom.classList.add('icon', val.trim())
-      this.dom.append(this._iconDom)
+    if (this.node && val && val.trim()) {
+      this.#iconNode = document.createElement('span')
+      this.#iconNode.classList.add('icon', val.trim())
+      this.node.append(this.#iconNode)
     }
   }
 
-  _initEvents () {
-    const dom = this.dom
-    this._events = {
-      list: {},
-      add (types, func) {
-        if (!types) {
-          throw new Error('Event must have types')
-        }
-        if (!func) {
-          throw new Error('Function does not exist')
-        }
-        const typeList = types.split(',')
-        for (const type of typeList) {
-          this.list[type] = this.list[type] || []
-          this.list[type].push(func)
-          dom?.addEventListener(type, func)
-        }
-      },
-      remove (types, func) {
-        if (!types) {
-          if (func) {
-            for (const type in this.list) {
-              this._removeAll(this.list[type], func, (event) => {
-                if (event) {
-                  dom?.removeEventListener(type, event)
-                }
-              })
-            }
-          } else {
-            for (const type in this.list) {
-              for (const event of (this.list[type] || [])) {
-                dom?.removeEventListener(type, event)
-              }
-              delete this.list[type]
-            }
-          }
-        } else {
-          const typeList = types.split(',').map(item => item.trim()).filter(item => !!item)
-          if (func) {
-            for (const type of typeList) {
-              this._removeAll(this.list[type], func, (event) => {
-                if (event) {
-                  dom?.removeEventListener(type, event)
-                }
-              })
-            }
-          } else {
-            for (const type of typeList) {
-              for (const event of (this.list[type] || [])) {
-                dom?.removeEventListener(type, event)
-              }
-              delete this.list[type]
-            }
-          }
-        }
-      },
-      _removeAll (list = [], item, callback = () => {}) {
-        let index = list.indexOf(item)
-        while (index > -1) {
-          callback(list.splice(index, 1)[0])
-          index = list.indexOf(item)
-        }
-      }
-    }
+  #initEvents () {
+    this.#events = new ScreenShotToolEvent(this.node)
   }
 }

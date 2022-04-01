@@ -88,6 +88,13 @@ export default class ScreenShot {
     })
   }
 
+  #child = {}
+  #events = {}
+  #infos = {}
+  #tools = {}
+  #ready = false
+  #destroyed = false
+
   constructor ({ node, img, destroyCallback = () => {} } = {}) {
     if (!(node instanceof window.HTMLElement)) {
       throw new Error('node must be HTMLElement')
@@ -98,23 +105,16 @@ export default class ScreenShot {
 
     node.__SCREEN_SHOT_GENERATED__ = true
 
-    this._child = {}
-    this._events = {}
-    this._infos = {}
-    this._tools = {}
-    this._ready = false
-    this._destroyed = false
-
     try {
       log('Screenshot 初始化开始')
-      this._initNode({
+      this.#initNode({
         node,
         img
       })
-      this._events.destroyCallback = destroyCallback
-      this._events.keyboardEvent = this._keyboardEvent.bind(this)
-      document.addEventListener('keydown', this._events.keyboardEvent)
-      this._ready = true
+      this.#events.destroyCallback = destroyCallback
+      this.#events.keyboardEvent = this.#keyboardEvent.bind(this)
+      document.addEventListener('keydown', this.#events.keyboardEvent)
+      this.#ready = true
       log('Screenshot 初始化完成')
     } catch (e) {
       this.destroy()
@@ -125,42 +125,34 @@ export default class ScreenShot {
 
   // region computed
   get ready () {
-    return this._ready
+    return this.#ready
   }
 
   get destroyed () {
-    return this._destroyed
+    return this.#destroyed
   }
 
   get node () {
-    return this._node
-  }
-
-  get originImg () {
-    return this._child?.originImg
-  }
-
-  get canvas () {
-    return this._events?.drawEvent || this._drawer
+    return this.#node
   }
 
   get img () {
-    if (this.canvas) {
+    if (this.#canvas) {
       const img = new window.Image()
-      img.src = this.canvas.toDataURL()
+      img.src = this.#canvas.toDataURL()
       return img
     } else {
-      return null
+      return this.#originImg
     }
   }
 
-  get _snipInfo () {
-    return this._infos?.snipInfo || {}
+  get #snipInfo () {
+    return this.#infos?.snipInfo || {}
   }
 
-  set _snipInfo (val) {
-    this._infos.snipInfo = val
-    const snipper = this._snipper
+  set #snipInfo (val) {
+    this.#infos.snipInfo = val
+    const snipper = this.#snipper
     const snipperBorderWidth = parseFloat(snipper.style.borderWidth)
     snipper.style.width = val.width + 'px'
     snipper.style.height = val.height + 'px'
@@ -168,7 +160,7 @@ export default class ScreenShot {
       val.left - snipperBorderWidth
     },${val.top - snipperBorderWidth})`
 
-    const sizeinfo = this._sizeinfo
+    const sizeinfo = this.#sizeinfo
     sizeinfo.style.display = 'block'
     if (val.top < 27) {
       sizeinfo.style.top = '5px'
@@ -178,120 +170,124 @@ export default class ScreenShot {
     sizeinfo.innerText = `${val.width} * ${val.height}`
   }
 
-  get _node () {
-    return this._child?.node
+  get #node () {
+    return this.#child?.node
   }
 
-  set _node (val) {
+  set #node (val) {
     if (val) {
-      this._child.node = val
+      this.#child.node = val
     } else {
-      delete this._child.node
+      delete this.#child.node
     }
   }
 
-  get _container () {
-    return this._child?.container
+  get #container () {
+    return this.#child?.container
   }
 
-  set _container (val) {
-    if (this._child?.container) {
-      this._child.container.remove()
-      delete this._child.container
-    }
-    if (val) {
-      this._child.container = val
-    }
-  }
-
-  get _originImg () {
-    return this._child?.originImg
-  }
-
-  set _originImg (val) {
-    if (this._child?.originImg) {
-      this._child.originImg.remove()
-      delete this._child.originImg
+  set #container (val) {
+    if (this.#child?.container) {
+      this.#child.container.remove()
+      delete this.#child.container
     }
     if (val) {
-      this._child.originImg = val
+      this.#child.container = val
     }
   }
 
-  get _snipper () {
-    return this._child?.snipper
+  get #originImg () {
+    return this.#child?.originImg
   }
 
-  set _snipper (val) {
-    if (this._child?.snipper) {
-      this._child.snipper.remove()
-      delete this._child.snipper
-    }
-    if (val) {
-      this._child.snipper = val
-    }
-  }
-
-  get _resizer () {
-    return this._child?.resizer
-  }
-
-  set _resizer (val) {
-    if (this._child?.resizer) {
-      this._child.resizer.remove()
-      delete this._child.resizer
+  set #originImg (val) {
+    if (this.#child?.originImg) {
+      this.#child.originImg.remove()
+      delete this.#child.originImg
     }
     if (val) {
-      this._child.resizer = val
+      this.#child.originImg = val
     }
   }
 
-  get _toolbar () {
-    return this._child?.toolbar
+  get #snipper () {
+    return this.#child?.snipper
   }
 
-  set _toolbar (val) {
-    if (this._child?.toolbar) {
-      this._child.toolbar.remove()
-      delete this._child.toolbar
-    }
-    if (val) {
-      this._child.toolbar = val
-    }
-  }
-
-  get _drawer () {
-    return this._child?.drawer
-  }
-
-  set _drawer (val) {
-    if (this._child?.drawer) {
-      this._child.drawer.remove()
-      delete this._child.drawer
+  set #snipper (val) {
+    if (this.#child?.snipper) {
+      this.#child.snipper.remove()
+      delete this.#child.snipper
     }
     if (val) {
-      this._child.drawer = val
+      this.#child.snipper = val
     }
   }
 
-  get _sizeinfo () {
-    return this._child?.sizeinfo
+  get #resizer () {
+    return this.#child?.resizer
   }
 
-  set _sizeinfo (val) {
-    if (this._child?.sizeinfo) {
-      this._child.sizeinfo.remove()
-      delete this._child.sizeinfo
+  set #resizer (val) {
+    if (this.#child?.resizer) {
+      this.#child.resizer.remove()
+      delete this.#child.resizer
     }
     if (val) {
-      this._child.sizeinfo = val
+      this.#child.resizer = val
     }
   }
 
-  get _hasActiveTool () {
+  get #toolbar () {
+    return this.#child?.toolbar
+  }
+
+  set #toolbar (val) {
+    if (this.#child?.toolbar) {
+      this.#child.toolbar.remove()
+      delete this.#child.toolbar
+    }
+    if (val) {
+      this.#child.toolbar = val
+    }
+  }
+
+  get #drawer () {
+    return this.#child?.drawer
+  }
+
+  set #drawer (val) {
+    if (this.#child?.drawer) {
+      this.#child.drawer.remove()
+      delete this.#child.drawer
+    }
+    if (val) {
+      this.#child.drawer = val
+    }
+  }
+
+  get #sizeinfo () {
+    return this.#child?.sizeinfo
+  }
+
+  set #sizeinfo (val) {
+    if (this.#child?.sizeinfo) {
+      this.#child.sizeinfo.remove()
+      delete this.#child.sizeinfo
+    }
+    if (val) {
+      this.#child.sizeinfo = val
+    }
+  }
+
+  get #canvas () {
+    return this.#events?.drawEvent || this.#drawer
+  }
+
+  get #hasActiveTool () {
     let result = false
-    for (const name in this._tools) {
-      if (this._tools[name].active) {
+    for (const name in this.#tools) {
+      if (this.#tools[name].active) {
         result = true
       }
     }
@@ -300,15 +296,15 @@ export default class ScreenShot {
   // endregion
 
   destroy () {
-    _clearDom(this._child.node)
-    delete this._child.node.__SCREEN_SHOT_GENERATED__
-    const destroyCallback = this._events?.destroyCallback
-    document.removeEventListener('keydown', this._events.keyboardEvent)
-    this._child = {}
-    this._events = {}
-    this._infos = {}
-    this._tools = {}
-    this._destroyed = true
+    _clearNode(this.#child.node)
+    delete this.#child.node.__SCREEN_SHOT_GENERATED__
+    const destroyCallback = this.#events?.destroyCallback
+    document.removeEventListener('keydown', this.#events.keyboardEvent)
+    this.#child = {}
+    this.#events = {}
+    this.#infos = {}
+    this.#tools = {}
+    this.#destroyed = true
     destroyCallback && destroyCallback()
   }
 
@@ -317,41 +313,43 @@ export default class ScreenShot {
    * @param e {KeyboardEvent} 鼠标事件
    * @private
    */
-  _keyboardEvent (e) {
+  #keyboardEvent (e) {
+    if (e.repeat) {
+      return
+    }
     if (e.key === 'Escape') {
       this.destroy()
       return
     }
-    if (this._hasActiveTool || e.repeat) {
-      return
-    }
-    if (this._events.drawEvent && e.key === 'Delete') {
-      const tmp = this.canvas.getActiveObject()
-      const objects = tmp ? (tmp._objects ? tmp._objects : [tmp]) : []
-      objects.forEach(object => {
-        this.canvas.remove(object)
-      })
-      this.canvas.discardActiveObject()?.renderAll()
+    if (this.#events.drawEvent && !this.#hasActiveTool) {
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        const tmp = this.#canvas.getActiveObject()
+        const objects = tmp ? (tmp._objects ? tmp._objects : [tmp]) : []
+        objects.forEach(object => {
+          this.#canvas.remove(object)
+        })
+        this.#canvas.discardActiveObject()?.renderAll()
+      }
     }
   }
 
   // region 初始化
-  _initNode ({ node, img }) {
-    this._initContainer(node)
-    this._initImage(img)
-    this._initSnipper()
+  #initNode ({ node, img }) {
+    this.#initContainer(node)
+    this.#initImage(img)
+    this.#initSnipper()
   }
 
-  _initContainer (node) {
-    this._node = node
-    _clearDom(node)
-    const container = this._container = document.createElement('div')
+  #initContainer (node) {
+    this.#node = node
+    _clearNode(node)
+    const container = this.#container = document.createElement('div')
     container.classList.add('screenshot')
     node.append(container)
     log('Screenshot 容器创建完成')
   }
 
-  _initImage (img) {
+  #initImage (img) {
     const originImg = new window.Image()
     originImg.setAttribute('crossOrigin', 'Anonymous')
     if (img instanceof window.HTMLImageElement) {
@@ -361,17 +359,17 @@ export default class ScreenShot {
     } else {
       throw new Error('Screenshot 图片容器创建失败')
     }
-    this._originImg = originImg
+    this.#originImg = originImg
     originImg.classList.add('screenshot-image')
-    this._container.append(originImg)
+    this.#container.append(originImg)
     log('Screenshot 图片容器创建完成')
   }
 
-  _initSnipper () {
-    const container = this._container
+  #initSnipper () {
+    const container = this.#container
     const containerStyle = window.getComputedStyle(container)
 
-    const snipper = this._snipper = document.createElement('div')
+    const snipper = this.#snipper = document.createElement('div')
     snipper.classList.add('screenshot-snipper')
     const snipperBorderWidth = Math.max(
       parseFloat(containerStyle.width),
@@ -381,11 +379,11 @@ export default class ScreenShot {
     snipper.style.transform = `matrix(1,0,0,1,${-snipperBorderWidth},${-snipperBorderWidth})`
     container.append(snipper)
 
-    const sizeinfo = this._sizeinfo = document.createElement('div')
+    const sizeinfo = this.#sizeinfo = document.createElement('div')
     sizeinfo.classList.add('screenshot-sizeinfo')
     snipper.append(sizeinfo)
 
-    const resizer = this._resizer = document.createElement('div')
+    const resizer = this.#resizer = document.createElement('div')
     resizer.classList.add('screenshot-resizer')
     snipper.append(resizer)
     _addDragEvent({
@@ -396,7 +394,7 @@ export default class ScreenShot {
       },
       moveCallback: ({ endPosition, startPosition }) => {
         const bounding = container.getBoundingClientRect()
-        this._snipInfo = {
+        this.#snipInfo = {
           width: Math.abs(endPosition.x - startPosition.x),
           height: Math.abs(endPosition.y - startPosition.y),
           left: Math.min(endPosition.x, startPosition.x) - bounding.x,
@@ -405,21 +403,21 @@ export default class ScreenShot {
       },
       upCallback: () => {
         snipper.style.cursor = 'default'
-        this._initResizer()
-        this._initDrawer()
-        this._initToolbar()
+        this.#initResizer()
+        this.#initDrawer()
+        this.#initToolbar()
         let originLeft, originTop
-        this._events.resizerEvent = _addDragEvent({
+        this.#events.resizerEvent = _addDragEvent({
           node: resizer,
           upNode: container,
           moveNode: container,
           last: true,
           downCallback: () => {
-            this._drawer = null
-            this._destroyResizer()
-            this._toolbar = null
-            originLeft = this._snipInfo.left
-            originTop = this._snipInfo.top
+            this.#drawer = null
+            this.#destroyResizer()
+            this.#toolbar = null
+            originLeft = this.#snipInfo.left
+            originTop = this.#snipInfo.top
           },
           moveCallback: ({ endPosition, startPosition }) => {
             const left = originLeft + endPosition.x - startPosition.x
@@ -427,16 +425,16 @@ export default class ScreenShot {
             const containerStyle = window.getComputedStyle(container)
             const containerWidth = parseFloat(containerStyle.width)
             const containerHeight = parseFloat(containerStyle.height)
-            this._snipInfo = {
-              ...this._snipInfo,
-              left: left >= 0 ? (left + this._snipInfo.width <= containerWidth ? left : containerWidth - this._snipInfo.width) : 0,
-              top: top >= 0 ? (top + this._snipInfo.height <= containerHeight ? top : containerHeight - this._snipInfo.height) : 0
+            this.#snipInfo = {
+              ...this.#snipInfo,
+              left: left >= 0 ? (left + this.#snipInfo.width <= containerWidth ? left : containerWidth - this.#snipInfo.width) : 0,
+              top: top >= 0 ? (top + this.#snipInfo.height <= containerHeight ? top : containerHeight - this.#snipInfo.height) : 0
             }
           },
           upCallback: () => {
-            this._initResizer()
-            this._initDrawer()
-            this._initToolbar()
+            this.#initResizer()
+            this.#initDrawer()
+            this.#initToolbar()
           }
         })
       }
@@ -445,26 +443,26 @@ export default class ScreenShot {
   // endregion
 
   // region resizer
-  _initResizer () {
-    this._destroyResizer()
+  #initResizer () {
+    this.#destroyResizer()
     const wrapper = document.createElement('div')
     wrapper.classList.add('screenshot-resizer-wrapper')
-    const container = this._container
-    const resizer = this._resizer
-    this._events.resizerItemEvents = []
+    const container = this.#container
+    const resizer = this.#resizer
+    this.#events.resizerItemEvents = []
     for (const direction of ['top', 'topright', 'right', 'bottomright', 'bottom', 'bottomleft', 'left', 'topleft']) {
       const resizerItem = document.createElement('div')
       resizerItem.classList.add('screenshot-resizer-item', `screenshot-resizer-${direction}`)
       let _snipInfo
-      this._events.resizerItemEvents.push(_addDragEvent({
+      this.#events.resizerItemEvents.push(_addDragEvent({
         node: resizerItem,
         upNode: container,
         moveNode: container,
         last: true,
         downCallback: () => {
-          this._toolbar = null
-          this._drawer = null
-          _snipInfo = { ...this._snipInfo }
+          this.#toolbar = null
+          this.#drawer = null
+          _snipInfo = { ...this.#snipInfo }
           resizer.style.cursor = window.getComputedStyle(resizerItem).cursor
         },
         moveCallback: ({ endPosition, startPosition }) => {
@@ -485,11 +483,11 @@ export default class ScreenShot {
             tmpSnipInfo.left = _snipInfo.left + x < _snipInfo.left + _snipInfo.width - 10 ? _snipInfo.left + x : _snipInfo.left + _snipInfo.width - 10
             tmpSnipInfo.width = _snipInfo.width - x > 10 ? _snipInfo.width - x : 10
           }
-          this._snipInfo = tmpSnipInfo
+          this.#snipInfo = tmpSnipInfo
         },
         upCallback: () => {
-          this._initToolbar()
-          this._initDrawer()
+          this.#initToolbar()
+          this.#initDrawer()
           resizer.style.cursor = 'move'
         }
       }))
@@ -498,80 +496,80 @@ export default class ScreenShot {
     resizer.append(wrapper)
   }
 
-  _destroyResizer () {
-    if (this._events.resizerItemEvents) {
-      for (const event of this._events.resizerItemEvents) {
+  #destroyResizer () {
+    if (this.#events.resizerItemEvents) {
+      for (const event of this.#events.resizerItemEvents) {
         event.stop()
       }
     }
-    delete this._events.resizerItemEvents
-    _clearDom(this._resizer)
+    delete this.#events.resizerItemEvents
+    _clearNode(this.#resizer)
   }
 
-  _stopResize () {
-    this._destroyResizer()
-    if (this._events.resizerEvent) {
-      this._events.resizerEvent.stop()
-      delete this._events.resizerEvent
+  #stopResize () {
+    this.#destroyResizer()
+    if (this.#events.resizerEvent) {
+      this.#events.resizerEvent.stop()
+      delete this.#events.resizerEvent
     }
-    this._resizer.remove()
+    this.#resizer.remove()
   }
   // endregion
 
   // region drawer
-  _initDrawer () {
-    this._drawer = document.createElement('canvas')
-    this._drawer.classList.add('screenshot-drawer')
-    this._drawer.width = this._snipInfo.width
-    this._drawer.height = this._snipInfo.height
-    const context = this._drawer.getContext('2d')
-    const widthScale = this._originImg.naturalWidth / this._originImg.width
-    const heightScale = this._originImg.naturalHeight / this._originImg.height
-    context.drawImage(this._originImg, this._snipInfo.left * widthScale, this._snipInfo.top * heightScale, this._snipInfo.width * widthScale, this._snipInfo.height * heightScale, 0, 0, this._snipInfo.width, this._snipInfo.height)
-    this._snipper.append(this._drawer)
+  #initDrawer () {
+    this.#drawer = document.createElement('canvas')
+    this.#drawer.classList.add('screenshot-drawer')
+    this.#drawer.width = this.#snipInfo.width
+    this.#drawer.height = this.#snipInfo.height
+    const context = this.#drawer.getContext('2d')
+    const widthScale = this.#originImg.naturalWidth / this.#originImg.width
+    const heightScale = this.#originImg.naturalHeight / this.#originImg.height
+    context.drawImage(this.#originImg, this.#snipInfo.left * widthScale, this.#snipInfo.top * heightScale, this.#snipInfo.width * widthScale, this.#snipInfo.height * heightScale, 0, 0, this.#snipInfo.width, this.#snipInfo.height)
+    this.#snipper.append(this.#drawer)
   }
 
-  _initDrawEvent () {
-    this._stopResize()
+  #initDrawEvent () {
+    this.#stopResize()
     const data = this.img
-    if (!this._events.drawEvent) {
-      this._events.drawEvent = new fabric.Canvas(this._drawer)
-      this.canvas.setBackgroundImage(
+    if (!this.#events.drawEvent) {
+      this.#events.drawEvent = new fabric.Canvas(this.#drawer)
+      this.#canvas.setBackgroundImage(
         data.src,
-        this.canvas.renderAll.bind(this.canvas)
+        this.#canvas.renderAll.bind(this.#canvas)
       )
-      this.canvas.selection = false
+      this.#canvas.selection = false
     }
   }
 
   // endregion
 
   // region toolbar
-  _initToolbar () {
-    this._toolbar = document.createElement('div')
-    this._toolbar.classList.add('screenshot-toolbar')
-    this._snipper.append(this._toolbar)
+  #initToolbar () {
+    this.#toolbar = document.createElement('div')
+    this.#toolbar.classList.add('screenshot-toolbar')
+    this.#snipper.append(this.#toolbar)
     // todo 绘制矩形
-    // this._addTool({ name: '矩形', iconClass: 'icon-square' })
+    // this.#addTool({ name: '矩形', iconClass: 'icon-square' })
     // todo 绘制椭圆
-    // this._addTool({ name: '椭圆', iconClass: 'icon-circle' })
-    this._addToolWrite()
-    this._addToolMosaic()
-    this._addToolText()
-    this._addToolDivider()
+    // this.#addTool({ name: '椭圆', iconClass: 'icon-circle' })
+    this.#addToolWrite()
+    this.#addToolMosaic()
+    this.#addToolText()
+    this.#addToolDivider()
     // todo 撤销修改
-    // this._addTool({ name: '撤销', iconClass: 'icon-return', disabled: true })
-    this._addTool({
+    // this.#addTool({ name: '撤销', iconClass: 'icon-return', disabled: true })
+    this.#addTool({
       name: '保存图片',
       iconClass: 'icon-download',
       clickEvent: () => {
-        dataURLToBlob(this.canvas.toDataURL()).then((blob) => {
+        dataURLToBlob(this.#canvas.toDataURL()).then((blob) => {
           saveAs(blob, 'clip.png')
           this.destroy()
         })
       }
     })
-    this._addTool({
+    this.#addTool({
       name: '退出',
       iconClass: 'icon-close',
       color: 'red',
@@ -579,12 +577,12 @@ export default class ScreenShot {
         this.destroy()
       }
     })
-    this._addTool({
+    this.#addTool({
       name: '完成',
       iconClass: 'icon-check',
       color: 'green',
       clickEvent: () => {
-        dataURLToBlob(this.canvas.toDataURL()).then((blob) => {
+        dataURLToBlob(this.#canvas.toDataURL()).then((blob) => {
           const data = [
             new window.ClipboardItem({
               [blob.type]: blob
@@ -596,85 +594,85 @@ export default class ScreenShot {
         })
       }
     })
-    if (this._snipInfo.top + this._snipInfo.height + 50 < this._container.offsetHeight) {
-      this._toolbar.style.top = 'calc(100% + 8px)'
+    if (this.#snipInfo.top + this.#snipInfo.height + 50 < this.#container.offsetHeight) {
+      this.#toolbar.style.top = 'calc(100% + 8px)'
     } else {
-      this._toolbar.style.top = 'calc(100% - 50px)'
+      this.#toolbar.style.top = 'calc(100% - 50px)'
     }
-    if (this._snipInfo.left + this._snipInfo.width - this._toolbar.offsetWidth >= 0) {
-      this._toolbar.style.left = 'unset'
-      this._toolbar.style.right = '0'
+    if (this.#snipInfo.left + this.#snipInfo.width - this.#toolbar.offsetWidth >= 0) {
+      this.#toolbar.style.left = 'unset'
+      this.#toolbar.style.right = '0'
     } else {
-      this._toolbar.style.left = '0'
-      this._toolbar.style.right = 'unset'
+      this.#toolbar.style.left = '0'
+      this.#toolbar.style.right = 'unset'
     }
   }
 
-  _addTool ({ name = '', iconClass = '', color = 'white', disabled = false, clickEvent, activeEvent, pauseEvent } = {}) {
-    this._tools[name] = new ScreenShotTool({
+  #addTool ({ name = '', iconClass = '', color = 'white', disabled = false, clickEvent, activeEvent, pauseEvent } = {}) {
+    this.#tools[name] = new ScreenShotTool({
       name,
       iconClass,
       color,
       disabled,
       clickEvent: clickEvent
         ? () => {
-            if (!this._tools[name].disabled) {
+            if (!this.#tools[name].disabled) {
               clickEvent()
             }
           }
         : () => {
-            this._initDrawEvent()
-            this._switchActiveTool(this._tools[name])
+            this.#initDrawEvent()
+            this.#switchActiveTool(this.#tools[name])
           },
       activeEvent,
       pauseEvent
     })
-    this._toolbar.append(this._tools[name].dom)
-    return this._tools[name]
+    this.#toolbar.append(this.#tools[name].node)
+    return this.#tools[name]
   }
 
-  _addToolDivider () {
+  #addToolDivider () {
     const dom = document.createElement('div')
     dom.classList.add('screenshot-toolbar-divider')
-    this._toolbar.append(dom)
+    this.#toolbar.append(dom)
   }
 
-  _addToolWrite () {
-    this._addTool({
+  #addToolWrite () {
+    this.#addTool({
       name: '画笔',
       iconClass: 'icon-write',
       activeEvent: () => {
         // 设置画笔颜色
-        this.canvas.freeDrawingBrush.color = 'red'
+        this.#canvas.freeDrawingBrush.color = 'red'
         // 设置画笔粗细
-        this.canvas.freeDrawingBrush.width = 5
-        this.canvas.isDrawingMode = true
+        this.#canvas.freeDrawingBrush.width = 5
+        this.#canvas.isDrawingMode = true
       },
       pauseEvent: () => {
-        this.canvas.isDrawingMode = false
+        this.#canvas.isDrawingMode = false
       }
     })
   }
 
-  _addToolMosaic () {
-    this._addTool({
+  #addToolMosaic () {
+    this.#addTool({
       name: '马赛克',
       iconClass: 'icon-mosaic'
     })
   }
 
-  _addToolText () {
-    this._addTool({
+  #addToolText () {
+    this.#addTool({
       name: '文本',
       iconClass: 'icon-text'
     })
   }
 
-  _switchActiveTool (tool) {
+  #switchActiveTool (tool) {
     if (!tool.active) {
-      for (const name in this._tools) {
+      for (const name in this.#tools) {
         if (name !== tool.name) {
-          this._tools[name].active = false
+          this.#tools[name].active = false
         }
       }
     }
@@ -687,7 +685,7 @@ export default class ScreenShot {
  * 清空节点
  * @param {HTMLElement} node
  */
-function _clearDom (node) {
+function _clearNode (node) {
   if (!(node instanceof window.HTMLElement)) {
     throw new Error('node must be HTMLElement')
   }
