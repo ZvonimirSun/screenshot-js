@@ -2,6 +2,12 @@ import domToImage from 'dom-to-image'
 import { saveAs } from 'file-saver'
 import ScreenShotTool from './screenshot-tool'
 import { fabric } from 'fabric'
+import {
+  clearNode,
+  addDragEvent,
+  dataURLToBlob,
+  log
+} from './utils.js'
 import './screenshot.scss'
 
 export default class ScreenShot {
@@ -132,22 +138,27 @@ export default class ScreenShot {
     return this.#destroyed
   }
 
-  get node () {
-    return this.#node
-  }
-
   get img () {
     if (this.#canvas) {
       const img = new window.Image()
       img.src = this.#canvas.toDataURL()
       return img
+    } else if (this.#originImg) {
+      const canvas = document.createElement('canvas')
+      canvas.width = this.#originImg.width
+      canvas.height = this.#originImg.height
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(this.#originImg, 0, 0, this.#originImg.naturalWidth, this.#originImg.naturalHeight, 0, 0, this.#originImg.width, this.#originImg.height)
+      const img = new window.Image()
+      img.src = canvas.toDataURL()
+      return img
     } else {
-      return this.#originImg
+      return null
     }
   }
 
   get #snipInfo () {
-    return this.#infos?.snipInfo || {}
+    return this.#infos.snipInfo || {}
   }
 
   set #snipInfo (val) {
@@ -171,7 +182,7 @@ export default class ScreenShot {
   }
 
   get #node () {
-    return this.#child?.node
+    return this.#child.node
   }
 
   set #node (val) {
@@ -183,11 +194,11 @@ export default class ScreenShot {
   }
 
   get #container () {
-    return this.#child?.container
+    return this.#child.container
   }
 
   set #container (val) {
-    if (this.#child?.container) {
+    if (this.#child.container) {
       this.#child.container.remove()
       delete this.#child.container
     }
@@ -197,11 +208,11 @@ export default class ScreenShot {
   }
 
   get #originImg () {
-    return this.#child?.originImg
+    return this.#child.originImg
   }
 
   set #originImg (val) {
-    if (this.#child?.originImg) {
+    if (this.#child.originImg) {
       this.#child.originImg.remove()
       delete this.#child.originImg
     }
@@ -211,11 +222,11 @@ export default class ScreenShot {
   }
 
   get #snipper () {
-    return this.#child?.snipper
+    return this.#child.snipper
   }
 
   set #snipper (val) {
-    if (this.#child?.snipper) {
+    if (this.#child.snipper) {
       this.#child.snipper.remove()
       delete this.#child.snipper
     }
@@ -225,11 +236,11 @@ export default class ScreenShot {
   }
 
   get #resizer () {
-    return this.#child?.resizer
+    return this.#child.resizer
   }
 
   set #resizer (val) {
-    if (this.#child?.resizer) {
+    if (this.#child.resizer) {
       this.#child.resizer.remove()
       delete this.#child.resizer
     }
@@ -239,11 +250,11 @@ export default class ScreenShot {
   }
 
   get #toolbar () {
-    return this.#child?.toolbar
+    return this.#child.toolbar
   }
 
   set #toolbar (val) {
-    if (this.#child?.toolbar) {
+    if (this.#child.toolbar) {
       this.#child.toolbar.remove()
       delete this.#child.toolbar
     }
@@ -253,11 +264,11 @@ export default class ScreenShot {
   }
 
   get #drawer () {
-    return this.#child?.drawer
+    return this.#child.drawer
   }
 
   set #drawer (val) {
-    if (this.#child?.drawer) {
+    if (this.#child.drawer) {
       this.#child.drawer.remove()
       delete this.#child.drawer
     }
@@ -267,11 +278,11 @@ export default class ScreenShot {
   }
 
   get #sizeinfo () {
-    return this.#child?.sizeinfo
+    return this.#child.sizeinfo
   }
 
   set #sizeinfo (val) {
-    if (this.#child?.sizeinfo) {
+    if (this.#child.sizeinfo) {
       this.#child.sizeinfo.remove()
       delete this.#child.sizeinfo
     }
@@ -281,7 +292,7 @@ export default class ScreenShot {
   }
 
   get #canvas () {
-    return this.#events?.drawEvent || this.#drawer
+    return this.#infos.fabricDrawer || this.#drawer
   }
 
   get #hasActiveTool () {
@@ -296,9 +307,9 @@ export default class ScreenShot {
   // endregion
 
   destroy () {
-    _clearNode(this.#child.node)
+    clearNode(this.#child.node)
     delete this.#child.node.__SCREEN_SHOT_GENERATED__
-    const destroyCallback = this.#events?.destroyCallback
+    const destroyCallback = this.#events.destroyCallback
     document.removeEventListener('keydown', this.#events.keyboardEvent)
     this.#child = {}
     this.#events = {}
@@ -321,7 +332,7 @@ export default class ScreenShot {
       this.destroy()
       return
     }
-    if (this.#events.drawEvent && !this.#hasActiveTool) {
+    if (this.#infos.fabricDrawer && !this.#hasActiveTool) {
       if (e.key === 'Delete' || e.key === 'Backspace') {
         const tmp = this.#canvas.getActiveObject()
         const objects = tmp ? (tmp._objects ? tmp._objects : [tmp]) : []
@@ -342,7 +353,7 @@ export default class ScreenShot {
 
   #initContainer (node) {
     this.#node = node
-    _clearNode(node)
+    clearNode(node)
     const container = this.#container = document.createElement('div')
     container.classList.add('screenshot')
     node.append(container)
@@ -386,7 +397,7 @@ export default class ScreenShot {
     const resizer = this.#resizer = document.createElement('div')
     resizer.classList.add('screenshot-resizer')
     snipper.append(resizer)
-    _addDragEvent({
+    addDragEvent({
       node: container,
       downCallback: () => {
         snipper.style.borderColor = 'rgba(0,0,0,0.6)'
@@ -407,7 +418,7 @@ export default class ScreenShot {
         this.#initDrawer()
         this.#initToolbar()
         let originLeft, originTop
-        this.#events.resizerEvent = _addDragEvent({
+        this.#events.resizerEvent = addDragEvent({
           node: resizer,
           upNode: container,
           moveNode: container,
@@ -454,7 +465,7 @@ export default class ScreenShot {
       const resizerItem = document.createElement('div')
       resizerItem.classList.add('screenshot-resizer-item', `screenshot-resizer-${direction}`)
       let _snipInfo
-      this.#events.resizerItemEvents.push(_addDragEvent({
+      this.#events.resizerItemEvents.push(addDragEvent({
         node: resizerItem,
         upNode: container,
         moveNode: container,
@@ -503,7 +514,7 @@ export default class ScreenShot {
       }
     }
     delete this.#events.resizerItemEvents
-    _clearNode(this.#resizer)
+    clearNode(this.#resizer)
   }
 
   #stopResize () {
@@ -532,8 +543,8 @@ export default class ScreenShot {
   #initDrawEvent () {
     this.#stopResize()
     const data = this.img
-    if (!this.#events.drawEvent) {
-      this.#events.drawEvent = new fabric.Canvas(this.#drawer)
+    if (!this.#infos.fabricDrawer) {
+      this.#infos.fabricDrawer = new fabric.Canvas(this.#drawer)
       this.#canvas.setBackgroundImage(
         data.src,
         this.#canvas.renderAll.bind(this.#canvas)
@@ -679,104 +690,4 @@ export default class ScreenShot {
     tool.active = !tool.active
   }
   // endregion
-}
-
-/**
- * 清空节点
- * @param {HTMLElement} node
- */
-function _clearNode (node) {
-  if (!(node instanceof window.HTMLElement)) {
-    throw new Error('node must be HTMLElement')
-  }
-  while (node.firstChild) {
-    node.removeChild(node.lastChild)
-  }
-}
-
-function _addDragEvent ({ node, moveNode, upNode, moveCallback = () => {}, downCallback = () => {}, upCallback = () => {}, last = false } = {}) {
-  if (!(node instanceof window.HTMLElement)) {
-    throw new Error('node must be HTMLElement')
-  }
-
-  let startPosition
-  upNode = upNode || node
-  moveNode = moveNode || node
-
-  node.addEventListener('click', _empty)
-  node.addEventListener('mousedown', _handleMouseDown)
-  upNode.addEventListener('mouseup', _handleMouseUp)
-  let flag = true
-
-  function _empty () {}
-
-  function _handleMouseDown (e) {
-    e.stopPropagation()
-    e.preventDefault()
-    if (flag) {
-      flag = false
-      startPosition = {
-        x: e.clientX,
-        y: e.clientY
-      }
-      moveNode.addEventListener('mousemove', _handleMouseMove)
-      downCallback({ startPosition })
-    }
-  }
-
-  function _handleMouseMove (e) {
-    e.stopPropagation()
-    e.preventDefault()
-    moveCallback({
-      startPosition,
-      endPosition: {
-        x: e.clientX,
-        y: e.clientY
-      }
-    })
-  }
-
-  function _handleMouseUp (e) {
-    e.stopPropagation()
-    e.preventDefault()
-    if (!startPosition) {
-      return
-    }
-    moveNode.removeEventListener('mousemove', _handleMouseMove)
-    if (!last) {
-      node.removeEventListener('click', _empty)
-      node.removeEventListener('mousedown', _handleMouseDown)
-      upNode.removeEventListener('mouseup', _handleMouseUp)
-    }
-    upCallback({
-      startPosition,
-      endPosition: {
-        x: e.clientX,
-        y: e.clientY
-      }
-    })
-    startPosition = null
-    flag = true
-  }
-
-  function stop () {
-    last = false
-    moveNode.removeEventListener('mousemove', _handleMouseMove)
-    node.removeEventListener('click', _empty)
-    node.removeEventListener('mousedown', _handleMouseDown)
-    upNode.removeEventListener('mouseup', _handleMouseUp)
-    startPosition = null
-  }
-
-  return {
-    stop
-  }
-}
-
-function log (msg) {
-  console.log('[' + new Date().toLocaleString('zh', { hour12: false }) + '] ', msg)
-}
-
-async function dataURLToBlob (dataURI) {
-  return await (await window.fetch(dataURI)).blob()
 }

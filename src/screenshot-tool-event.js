@@ -1,3 +1,5 @@
+import { removeAll } from './utils.js'
+
 export default class ScreenShotToolEvent {
   #list = {}
   /**
@@ -62,13 +64,5 @@ export default class ScreenShotToolEvent {
         }
       }
     }
-  }
-}
-
-function removeAll (list = [], item, callback = () => {}) {
-  let index = list.indexOf(item)
-  while (index > -1) {
-    callback(list.splice(index, 1)[0])
-    index = list.indexOf(item)
   }
 }
