@@ -1,5 +1,6 @@
 import domToImage from 'dom-to-image'
 import { saveAs } from 'file-saver'
+import ScreenshotFabricEvent from './screenshot-fabric-event.js'
 import ScreenshotTool from './screenshot-tool'
 import { fabric } from 'fabric'
 import {
@@ -9,6 +10,8 @@ import {
   log
 } from './utils.js'
 import './screenshot.scss'
+
+const { Canvas, Textbox } = fabric
 
 export default class Screenshot {
   static getImage ({ node, width, height, callback = () => {} }) {
@@ -544,12 +547,12 @@ export default class Screenshot {
     this.#stopResize()
     const data = this.img
     if (!this.#infos.fabricDrawer) {
-      this.#infos.fabricDrawer = new fabric.Canvas(this.#drawer)
+      this.#infos.fabricDrawer = new Canvas(this.#drawer)
       this.#canvas.setBackgroundImage(
         data.src,
         this.#canvas.renderAll.bind(this.#canvas)
       )
-      this.#canvas.selection = false
+      this.#events.drawEvent = new ScreenshotFabricEvent(this.#canvas)
     }
   }
 
@@ -658,9 +661,12 @@ export default class Screenshot {
         // 设置画笔粗细
         this.#canvas.freeDrawingBrush.width = 5
         this.#canvas.isDrawingMode = true
+        this.#canvas.selection = false
       },
       pauseEvent: () => {
         this.#canvas.isDrawingMode = false
+        this.#canvas.selection = true
+        this.#canvas.discardActiveObject()?.renderAll()
       }
     })
   }
@@ -673,10 +679,48 @@ export default class Screenshot {
   }
 
   #addToolText () {
-    this.#addTool({
+    const event = createTextbox.bind(this)
+    const tool = this.#addTool({
       name: '文本',
-      iconClass: 'icon-text'
+      iconClass: 'icon-text',
+      activeEvent: () => {
+        this.#canvas.defaultCursor = 'text'
+        this.#canvas.selection = false
+        this.#events.drawEvent.add('mouse:down', event)
+      },
+      pauseEvent: () => {
+        this.#canvas.defaultCursor = 'default'
+        this.#canvas.selection = true
+        this.#canvas.discardActiveObject()?.renderAll()
+        this.#events.drawEvent.remove('mouse:down', event)
+      }
     })
+
+    function createTextbox (e) {
+      const textbox = new Textbox('文本', {
+        fill: 'red',
+        width: 100,
+        left: e.pointer.x,
+        top: e.pointer.y,
+        fontSize: 18,
+        lineHeight: 1,
+        lockRotation: true,
+        lockScalingY: true,
+        lockScalingFlip: true,
+        splitByGrapheme: true,
+        objectCaching: false
+      })
+      textbox.on('scaling', (ev) => {
+        const target = ev.transform.target
+        const width = target.get('width') * target.get('scaleX')
+        target.set('width', width)
+        target.set('scaleX', 1)
+      })
+      this.#switchActiveTool(tool)
+      this.#canvas.add(textbox)
+      this.#canvas.setActiveObject(textbox)
+      this.#canvas.renderAll()
+    }
   }
 
   #switchActiveTool (tool) {
