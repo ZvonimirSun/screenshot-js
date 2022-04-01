@@ -103,6 +103,7 @@ export default class ScreenShot {
     this._infos = {}
     this._tools = {}
     this._ready = false
+    this._destroyed = false
 
     try {
       log('Screenshot 初始化开始')
@@ -111,6 +112,8 @@ export default class ScreenShot {
         img
       })
       this._events.destroyCallback = destroyCallback
+      this._events.keyboardEvent = this._keyboardEvent.bind(this)
+      document.addEventListener('keydown', this._events.keyboardEvent)
       this._ready = true
       log('Screenshot 初始化完成')
     } catch (e) {
@@ -123,6 +126,10 @@ export default class ScreenShot {
   // region computed
   get ready () {
     return this._ready
+  }
+
+  get destroyed () {
+    return this._destroyed
   }
 
   get node () {
@@ -280,16 +287,52 @@ export default class ScreenShot {
       this._child.sizeinfo = val
     }
   }
+
+  get _hasActiveTool () {
+    let result = false
+    for (const name in this._tools) {
+      if (this._tools[name].active) {
+        result = true
+      }
+    }
+    return result
+  }
   // endregion
 
   destroy () {
     _clearDom(this._child.node)
     delete this._child.node.__SCREEN_SHOT_GENERATED__
-    delete this._child
-    delete this._infos
-    delete this._tools
-    if (this._events?.destroyCallback) { this._events.destroyCallback() }
-    delete this._events
+    const destroyCallback = this._events?.destroyCallback
+    document.removeEventListener('keydown', this._events.keyboardEvent)
+    this._child = {}
+    this._events = {}
+    this._infos = {}
+    this._tools = {}
+    this._destroyed = true
+    destroyCallback && destroyCallback()
+  }
+
+  /**
+   * 删除事件
+   * @param e {KeyboardEvent} 鼠标事件
+   * @private
+   */
+  _keyboardEvent (e) {
+    if (e.key === 'Escape') {
+      this.destroy()
+      return
+    }
+    if (this._hasActiveTool || e.repeat) {
+      return
+    }
+    if (this._events.drawEvent && e.key === 'Delete') {
+      const tmp = this.canvas.getActiveObject()
+      const objects = tmp ? (tmp._objects ? tmp._objects : [tmp]) : []
+      objects.forEach(object => {
+        this.canvas.remove(object)
+      })
+      this.canvas.discardActiveObject()?.renderAll()
+    }
   }
 
   // region 初始化
@@ -492,13 +535,15 @@ export default class ScreenShot {
     this._stopResize()
     const data = this.img
     if (!this._events.drawEvent) {
-      const canvas = this._events.drawEvent = new fabric.Canvas(this._drawer)
-      canvas.setBackgroundImage(
+      this._events.drawEvent = new fabric.Canvas(this._drawer)
+      this.canvas.setBackgroundImage(
         data.src,
-        canvas.renderAll.bind(canvas)
+        this.canvas.renderAll.bind(this.canvas)
       )
+      this.canvas.selection = false
     }
   }
+
   // endregion
 
   // region toolbar
@@ -577,7 +622,10 @@ export default class ScreenShot {
               clickEvent()
             }
           }
-        : undefined,
+        : () => {
+            this._initDrawEvent()
+            this._switchActiveTool(this._tools[name])
+          },
       activeEvent,
       pauseEvent
     })
@@ -592,13 +640,9 @@ export default class ScreenShot {
   }
 
   _addToolWrite () {
-    const tool = this._addTool({
+    this._addTool({
       name: '画笔',
       iconClass: 'icon-write',
-      clickEvent: () => {
-        this._initDrawEvent()
-        this._switchActiveTool(tool)
-      },
       activeEvent: () => {
         // 设置画笔颜色
         this.canvas.freeDrawingBrush.color = 'red'
@@ -613,38 +657,28 @@ export default class ScreenShot {
   }
 
   _addToolMosaic () {
-    const tool = this._addTool({
+    this._addTool({
       name: '马赛克',
-      iconClass: 'icon-mosaic',
-      clickEvent: () => {
-        this._initDrawEvent()
-        this._switchActiveTool(tool)
-      }
+      iconClass: 'icon-mosaic'
     })
   }
 
   _addToolText () {
-    const tool = this._addTool({
+    this._addTool({
       name: '文本',
-      iconClass: 'icon-text',
-      clickEvent: () => {
-        if (!tool.disabled) {
-          this._initDrawEvent()
-          this._switchActiveTool(tool)
-        }
-      }
+      iconClass: 'icon-text'
     })
   }
 
   _switchActiveTool (tool) {
-    tool.active = !tool.active
-    if (tool.active) {
+    if (!tool.active) {
       for (const name in this._tools) {
         if (name !== tool.name) {
           this._tools[name].active = false
         }
       }
     }
+    tool.active = !tool.active
   }
   // endregion
 }
