@@ -342,6 +342,9 @@ export default class Screenshot {
     if (this.#infos.fabricDrawer && !this.#hasActiveTool) {
       if (e.key === 'Delete' || e.key === 'Backspace') {
         const tmp = this.#canvas.getActiveObject()
+        if (tmp && tmp.isEditing) {
+          return
+        }
         const objects = tmp ? (tmp._objects ? tmp._objects : [tmp]) : []
         objects.forEach(object => {
           this.#canvas.remove(object)
