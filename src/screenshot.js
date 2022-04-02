@@ -1,5 +1,6 @@
 import domToImage from 'dom-to-image'
 import { saveAs } from 'file-saver'
+import MosaicBrush from './MosaicBrush.js'
 import ScreenshotFabricEvent from './screenshot-fabric-event.js'
 import ScreenshotTool from './screenshot-tool'
 import { fabric } from 'fabric'
@@ -11,7 +12,7 @@ import {
 } from './utils.js'
 import './screenshot.scss'
 
-const { Canvas, Textbox } = fabric
+const { Canvas, Textbox, PencilBrush } = fabric
 
 export default class Screenshot {
   static getImage ({ node, width, height, callback = () => {} }) {
@@ -690,6 +691,7 @@ export default class Screenshot {
       name: '画笔',
       iconClass: 'icon-write',
       activeEvent: () => {
+        this.#canvas.freeDrawingBrush = new PencilBrush(this.#canvas)
         // 设置画笔颜色
         this.#canvas.freeDrawingBrush.color = 'red'
         // 设置画笔粗细
@@ -707,7 +709,18 @@ export default class Screenshot {
   #addToolMosaic () {
     this.#addTool({
       name: '马赛克',
-      iconClass: 'icon-mosaic'
+      iconClass: 'icon-mosaic',
+      activeEvent: () => {
+        this.#canvas.selection = false
+        this.#canvas.isDrawingMode = true
+        const brush = this.#canvas.freeDrawingBrush = new MosaicBrush(this.#canvas)
+        brush.color = 'white'
+        brush.width = 12
+      },
+      pauseEvent: () => {
+        this.#canvas.isDrawingMode = false
+        this.#canvas.selection = true
+      }
     })
   }
 
