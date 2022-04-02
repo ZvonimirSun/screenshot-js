@@ -409,13 +409,21 @@ export default class Screenshot {
     const resizer = this.#resizer = document.createElement('div')
     resizer.classList.add('screenshot-resizer')
     snipper.append(resizer)
+    this.#initSnipperEvent()
+  }
+
+  #initSnipperEvent () {
+    const container = this.#container
+    const snipper = this.#snipper
+    const resizer = this.#resizer
+    let moved = false
     addDragEvent({
       node: container,
       downCallback: () => {
         snipper.style.borderColor = 'rgba(0,0,0,0.6)'
-        snipper.style.cursor = 'crosshair'
       },
       moveCallback: ({ endPosition, startPosition }) => {
+        moved = true
         const bounding = container.getBoundingClientRect()
         this.#snipInfo = {
           width: Math.abs(endPosition.x - startPosition.x),
@@ -425,41 +433,45 @@ export default class Screenshot {
         }
       },
       upCallback: () => {
-        snipper.style.cursor = 'default'
-        this.#initResizer()
-        this.#initDrawer()
-        this.#initToolbar()
-        let originLeft, originTop
-        this.#events.resizerEvent = addDragEvent({
-          node: resizer,
-          upNode: container,
-          moveNode: container,
-          last: true,
-          downCallback: () => {
-            this.#drawer = null
-            this.#destroyResizer()
-            this.#toolbar = null
-            originLeft = this.#snipInfo.left
-            originTop = this.#snipInfo.top
-          },
-          moveCallback: ({ endPosition, startPosition }) => {
-            const left = originLeft + endPosition.x - startPosition.x
-            const top = originTop + endPosition.y - startPosition.y
-            const containerStyle = window.getComputedStyle(container)
-            const containerWidth = parseFloat(containerStyle.width)
-            const containerHeight = parseFloat(containerStyle.height)
-            this.#snipInfo = {
-              ...this.#snipInfo,
-              left: left >= 0 ? (left + this.#snipInfo.width <= containerWidth ? left : containerWidth - this.#snipInfo.width) : 0,
-              top: top >= 0 ? (top + this.#snipInfo.height <= containerHeight ? top : containerHeight - this.#snipInfo.height) : 0
+        if (moved) {
+          snipper.style.cursor = 'default'
+          this.#initResizer()
+          this.#initDrawer()
+          this.#initToolbar()
+          let originLeft, originTop
+          this.#events.resizerEvent = addDragEvent({
+            node: resizer,
+            upNode: container,
+            moveNode: container,
+            last: true,
+            downCallback: () => {
+              this.#drawer = null
+              this.#destroyResizer()
+              this.#toolbar = null
+              originLeft = this.#snipInfo.left
+              originTop = this.#snipInfo.top
+            },
+            moveCallback: ({ endPosition, startPosition }) => {
+              const left = originLeft + endPosition.x - startPosition.x
+              const top = originTop + endPosition.y - startPosition.y
+              const containerStyle = window.getComputedStyle(container)
+              const containerWidth = parseFloat(containerStyle.width)
+              const containerHeight = parseFloat(containerStyle.height)
+              this.#snipInfo = {
+                ...this.#snipInfo,
+                left: left >= 0 ? (left + this.#snipInfo.width <= containerWidth ? left : containerWidth - this.#snipInfo.width) : 0,
+                top: top >= 0 ? (top + this.#snipInfo.height <= containerHeight ? top : containerHeight - this.#snipInfo.height) : 0
+              }
+            },
+            upCallback: () => {
+              this.#initResizer()
+              this.#initDrawer()
+              this.#initToolbar()
             }
-          },
-          upCallback: () => {
-            this.#initResizer()
-            this.#initDrawer()
-            this.#initToolbar()
-          }
-        })
+          })
+        } else {
+          this.#initSnipperEvent()
+        }
       }
     })
   }
