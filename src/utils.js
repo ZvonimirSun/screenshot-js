@@ -16,22 +16,20 @@ function addDragEvent ({ node, moveNode, upNode, moveCallback = () => {}, downCa
     throw new Error('node must be HTMLElement')
   }
 
-  let startPosition
+  let startPosition = null
   upNode = upNode || node
   moveNode = moveNode || node
 
-  node.addEventListener('click', _empty)
   node.addEventListener('mousedown', _handleMouseDown)
   upNode.addEventListener('mouseup', _handleMouseUp)
-  let flag = true
-
-  function _empty () {}
+  let isDown = false
 
   function _handleMouseDown (e) {
+    if (e.button !== 0) return
     e.stopPropagation()
     e.preventDefault()
-    if (flag) {
-      flag = false
+    if (!isDown) {
+      isDown = true
       startPosition = {
         x: e.clientX,
         y: e.clientY
@@ -42,6 +40,7 @@ function addDragEvent ({ node, moveNode, upNode, moveCallback = () => {}, downCa
   }
 
   function _handleMouseMove (e) {
+    if (!isDown) return
     e.stopPropagation()
     e.preventDefault()
     moveCallback({
@@ -54,6 +53,7 @@ function addDragEvent ({ node, moveNode, upNode, moveCallback = () => {}, downCa
   }
 
   function _handleMouseUp (e) {
+    if (e.button !== 0) return
     e.stopPropagation()
     e.preventDefault()
     if (!startPosition) {
@@ -61,7 +61,6 @@ function addDragEvent ({ node, moveNode, upNode, moveCallback = () => {}, downCa
     }
     moveNode.removeEventListener('mousemove', _handleMouseMove)
     if (!last) {
-      node.removeEventListener('click', _empty)
       node.removeEventListener('mousedown', _handleMouseDown)
       upNode.removeEventListener('mouseup', _handleMouseUp)
     }
@@ -73,13 +72,13 @@ function addDragEvent ({ node, moveNode, upNode, moveCallback = () => {}, downCa
       }
     })
     startPosition = null
-    flag = true
+    isDown = false
   }
 
   function stop () {
     last = false
+    isDown = false
     moveNode.removeEventListener('mousemove', _handleMouseMove)
-    node.removeEventListener('click', _empty)
     node.removeEventListener('mousedown', _handleMouseDown)
     upNode.removeEventListener('mouseup', _handleMouseUp)
     startPosition = null
