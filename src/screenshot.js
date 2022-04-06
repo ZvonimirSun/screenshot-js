@@ -317,6 +317,9 @@ export default class Screenshot {
   // endregion
 
   destroy () {
+    if (this.#destroyed) {
+      return
+    }
     clearNode(this.#child.node)
     delete this.#child.node.__SCREEN_SHOT_GENERATED__
     const destroyCallback = this.#events.destroyCallback
