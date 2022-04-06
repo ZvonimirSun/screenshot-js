@@ -15,7 +15,7 @@ import './screenshot.scss'
 const { Canvas, Textbox, PencilBrush } = fabric
 
 export default class Screenshot {
-  static getImage ({ node, width, height, callback = () => {} }) {
+  static getImage ({ node, width, height, callback = () => {}, options = {} }) {
     return new Promise((resolve, reject) => {
       if (!(node instanceof window.HTMLElement)) {
         reject(new Error('node must be HTMLElement'))
@@ -37,7 +37,8 @@ export default class Screenshot {
         width: node.offsetWidth * scale,
         quality: 1,
         style,
-        cacheBust: true
+        cacheBust: true,
+        ...options
       }
       domToImage
         .toBlob(node, param)
