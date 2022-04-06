@@ -5,8 +5,7 @@
   "main": "./dist/screenshot.umd.js",
   "scripts": {
     "start": "webpack-dev-server --mode development --config ./webpack.config.js",
-    "build:prod": "cross-env production=true webpack",
-    "build:test": "webpack",
+    "build": "cross-env production=true webpack",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

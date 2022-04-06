@@ -36,7 +36,8 @@ export default class Screenshot {
         height: node.offsetHeight * scale,
         width: node.offsetWidth * scale,
         quality: 1,
-        style
+        style,
+        cacheBust: true
       }
       domToImage
         .toBlob(node, param)
