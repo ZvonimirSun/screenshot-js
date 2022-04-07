@@ -637,14 +637,19 @@ export default class Screenshot {
       color: 'green',
       clickEvent: () => {
         dataURLToBlob(this.#canvas.toDataURL()).then((blob) => {
-          const data = [
-            new window.ClipboardItem({
-              [blob.type]: blob
+          if (window.ClipboardItem) {
+            const data = [
+              new window.ClipboardItem({
+                [blob.type]: blob
+              })
+            ]
+            navigator.clipboard.write(data).finally(() => {
+              this.destroy()
             })
-          ]
-          navigator.clipboard.write(data).finally(() => {
+          } else {
+            saveAs(blob, 'clip.png')
             this.destroy()
-          })
+          }
         })
       }
     })
