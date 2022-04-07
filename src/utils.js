@@ -97,8 +97,12 @@ async function blobToDataURL (blob) {
   return await (await window.fetch(window.URL.createObjectURL(blob))).text()
 }
 
-function log (msg) {
-  console.log('[' + new Date().toLocaleString('zh', { hour12: false }) + '] ', msg)
+function log (...msg) {
+  console.log('%c[' + new Date().toLocaleString('zh', { hour12: false }) + '] %cINFO: ' + msg.join(' '), 'color:yellow', 'color: green')
+}
+
+function error (...msg) {
+  console.log('%c[' + new Date().toLocaleString('zh', { hour12: false }) + '] %cERROR: ' + msg.join(' '), 'color:yellow', 'color: red')
 }
 
 function removeAll (list = [], item, callback = () => {}) {
@@ -114,5 +118,6 @@ export {
   dataURLToBlob,
   blobToDataURL,
   log,
+  error,
   removeAll
 }

@@ -8,7 +8,8 @@ import {
   clearNode,
   addDragEvent,
   dataURLToBlob,
-  log
+  log,
+  error
 } from './utils.js'
 import './screenshot.scss'
 
@@ -130,7 +131,7 @@ export default class Screenshot {
       log('Screenshot 初始化完成')
     } catch (e) {
       this.destroy()
-      log('Screenshot 初始化失败')
+      error('Screenshot 初始化失败')
       throw e
     }
   }
@@ -637,7 +638,7 @@ export default class Screenshot {
       color: 'green',
       clickEvent: () => {
         dataURLToBlob(this.#canvas.toDataURL()).then((blob) => {
-          if (window.ClipboardItem) {
+          try {
             const data = [
               new window.ClipboardItem({
                 [blob.type]: blob
@@ -646,7 +647,8 @@ export default class Screenshot {
             navigator.clipboard.write(data).finally(() => {
               this.destroy()
             })
-          } else {
+          } catch (e) {
+            error(e.name, e.message)
             saveAs(blob, 'clip.png')
             this.destroy()
           }
