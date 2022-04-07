@@ -604,18 +604,18 @@ export default class Screenshot {
     this.#toolbar.classList.add('screenshot-toolbar')
     this.#snipper.append(this.#toolbar)
     // todo 绘制矩形
-    // this.#addTool({ name: '矩形', iconClass: 'icon-square' })
+    // this.#addTool({ name: '矩形', icon: 'square' })
     // todo 绘制椭圆
-    // this.#addTool({ name: '椭圆', iconClass: 'icon-circle' })
+    // this.#addTool({ name: '椭圆', icon: 'circle' })
     this.#addToolWrite()
     this.#addToolMosaic()
     this.#addToolText()
     this.#addToolDivider()
     // todo 撤销修改
-    // this.#addTool({ name: '撤销', iconClass: 'icon-return', disabled: true })
+    // this.#addTool({ name: '撤销', icon: 'return', disabled: true })
     this.#addTool({
       name: '保存图片',
-      iconClass: 'icon-download',
+      icon: 'download',
       clickEvent: () => {
         dataURLToBlob(this.#canvas.toDataURL()).then((blob) => {
           saveAs(blob, 'clip.png')
@@ -625,7 +625,7 @@ export default class Screenshot {
     })
     this.#addTool({
       name: '退出',
-      iconClass: 'icon-close',
+      icon: 'close',
       color: 'red',
       clickEvent: () => {
         this.destroy()
@@ -633,7 +633,7 @@ export default class Screenshot {
     })
     this.#addTool({
       name: '完成',
-      iconClass: 'icon-check',
+      icon: 'check',
       color: 'green',
       clickEvent: () => {
         dataURLToBlob(this.#canvas.toDataURL()).then((blob) => {
@@ -662,10 +662,10 @@ export default class Screenshot {
     }
   }
 
-  #addTool ({ name = '', iconClass = '', color = 'white', disabled = false, clickEvent, activeEvent, pauseEvent } = {}) {
+  #addTool ({ name = '', icon = '', color = 'white', disabled = false, clickEvent, activeEvent, pauseEvent } = {}) {
     this.#tools[name] = new ScreenshotTool({
       name,
-      iconClass,
+      icon,
       color,
       disabled,
       clickEvent: clickEvent
@@ -694,7 +694,7 @@ export default class Screenshot {
   #addToolWrite () {
     this.#addTool({
       name: '画笔',
-      iconClass: 'icon-write',
+      icon: 'write',
       activeEvent: () => {
         this.#canvas.freeDrawingBrush = new PencilBrush(this.#canvas)
         // 设置画笔颜色
@@ -714,7 +714,7 @@ export default class Screenshot {
   #addToolMosaic () {
     this.#addTool({
       name: '马赛克',
-      iconClass: 'icon-mosaic',
+      icon: 'mosaic',
       activeEvent: () => {
         this.#canvas.selection = false
         this.#canvas.isDrawingMode = true
@@ -733,7 +733,7 @@ export default class Screenshot {
     const event = createTextbox.bind(this)
     const tool = this.#addTool({
       name: '文本',
-      iconClass: 'icon-text',
+      icon: 'text',
       activeEvent: () => {
         this.#canvas.defaultCursor = 'text'
         this.#canvas.selection = false

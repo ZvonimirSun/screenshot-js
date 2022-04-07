@@ -53,14 +53,14 @@ export default class ScreenshotTool {
   /**
    * Screenshot constructor
    * @param name {string} 名称
-   * @param iconClass {string} 图标类
+   * @param icon {string} 图标类
    * @param [color='white'] {string} 图标默认颜色
    * @param [disabled] {boolean} 是否禁用
    * @param [clickEvent] {function} 点击方法
    * @param [activeEvent] {function} 激活方法
    * @param [pauseEvent] {function} 取消激活方法
    */
-  constructor ({ name, iconClass, color, disabled, clickEvent, activeEvent, pauseEvent } = {}) {
+  constructor ({ name, icon, color, disabled, clickEvent, activeEvent, pauseEvent } = {}) {
     this.#node = document.createElement('div')
     this.#node.classList.add('screenshot-toolbar-tool')
     this.#initEvents()
@@ -68,7 +68,7 @@ export default class ScreenshotTool {
     name && (this.name = name)
     color && (this.color = color)
     disabled && (this.disabled = disabled)
-    iconClass && (this.iconClass = iconClass)
+    icon && (this.icon = icon)
     activeEvent && (this.#activeEvent = activeEvent)
     pauseEvent && (this.#pauseEvent = pauseEvent)
     if (clickEvent) {
@@ -141,17 +141,17 @@ export default class ScreenshotTool {
     }
   }
 
-  get iconClass () {
+  get icon () {
     return this.#iconNode.classList
   }
 
-  set iconClass (val) {
+  set icon (val) {
     if (this.#iconNode) {
       this.#iconNode.remove()
     }
     if (this.node && val && val.trim()) {
       this.#iconNode = document.createElement('span')
-      this.#iconNode.classList.add('icon', val.trim())
+      this.#iconNode.classList.add('screenshot-icon', 'icon-s-' + val.trim())
       this.node.append(this.#iconNode)
     }
   }

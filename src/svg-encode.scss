@@ -178,3 +178,18 @@ $encoding-reference: (
   }
   @return 'data:image/svg+xml;utf8,' + $svg;
 }
+
+// 单色图标
+@mixin single-color-icon($url) {
+  mask: url(svg-encode($url)) no-repeat 100% 100%;
+  background-color: currentColor;
+  height: 1em;
+  width: 1em;
+}
+
+// 彩色图标
+@mixin multi-color-icon($url) {
+  background: transparent url(svg-encode($url)) no-repeat 100% 100%;
+  height: 1em;
+  width: 1em;
+}
