@@ -11,6 +11,7 @@ import {
   log,
   error
 } from './utils.js'
+import { merge } from 'lodash-es'
 import './screenshot.scss'
 
 const { Canvas, Textbox, PencilBrush } = fabric
@@ -103,12 +104,27 @@ export default class Screenshot {
 
   #child = {}
   #events = {}
-  #infos = {}
+  #infos = {
+    status: 'pending'
+  }
+
   #tools = {}
-  #ready = false
   #destroyed = false
 
-  constructor ({ node, img, destroyCallback = () => {} } = {}) {
+  #options = {
+    autoWelt: false,
+    autoFull: false
+  }
+
+  /**
+   * @param {HTMLElement} node
+   * @param {HTMLImageElement|string} img
+   * @param {function} [destroyCallback]
+   * @param {function} [readyCallback]
+   * @param {boolean} [autoWelt]
+   * @param {boolean} [autoFull]
+   */
+  constructor ({ node, img, destroyCallback = () => {}, readyCallback = () => {}, autoWelt, autoFull } = {}) {
     if (!(node instanceof window.HTMLElement)) {
       throw new Error('node must be HTMLElement')
     }
@@ -118,6 +134,11 @@ export default class Screenshot {
 
     node.__SCREEN_SHOT_GENERATED__ = true
 
+    merge(this.#options, {
+      autoWelt,
+      autoFull
+    })
+
     try {
       log('Screenshot 初始化开始')
       this.#initNode({
@@ -125,10 +146,14 @@ export default class Screenshot {
         img
       })
       this.#events.destroyCallback = destroyCallback
+      this.#events.readyCallback = readyCallback
       this.#events.keyboardEvent = this.#keyboardEvent.bind(this)
       document.addEventListener('keydown', this.#events.keyboardEvent)
-      this.#ready = true
-      log('Screenshot 初始化完成')
+      if (this.#originImg.complete) {
+        this.#status = 'ready'
+      } else {
+        this.#status = 'waitForImg'
+      }
     } catch (e) {
       this.destroy()
       error('Screenshot 初始化失败')
@@ -137,8 +162,33 @@ export default class Screenshot {
   }
 
   // region computed
-  get ready () {
-    return this.#ready
+  get options () {
+    return this.#options
+  }
+
+  get status () {
+    return this.#status
+  }
+
+  get #status () {
+    return this.#infos.status || 'pending'
+  }
+
+  set #status (val) {
+    if (this.destroyed) {
+      return
+    }
+    this.#infos.status = val
+    if (val === 'ready') {
+      this.#events.readyCallback && this.#events.readyCallback()
+      if (this.#events.readyEvent && this.#events.readyEvent.length) {
+        for (const callback of this.#events.readyEvent) {
+          callback()
+        }
+      }
+      this.#events.readyEvent = []
+      log('Screenshot 初始化完成')
+    }
   }
 
   get destroyed () {
@@ -173,7 +223,8 @@ export default class Screenshot {
   }
 
   set #snipInfo (val) {
-    this.#infos.snipInfo = val
+    this.#infos.snipInfo = merge(this.#infos.snipInfo, val)
+    val = this.#infos.snipInfo
     const snipper = this.#snipper
     const snipperBorderWidth = parseFloat(snipper.style.borderWidth)
     snipper.style.width = val.width + 'px'
@@ -380,6 +431,11 @@ export default class Screenshot {
   #initImage (img) {
     const originImg = new window.Image()
     originImg.setAttribute('crossOrigin', 'Anonymous')
+    originImg.addEventListener('load', () => {
+      if (this.#status === 'waitForImg') {
+        this.#status = 'ready'
+      }
+    }, false)
     if (img instanceof window.HTMLImageElement) {
       originImg.src = img.src
     } else if (typeof img === 'string') {
@@ -422,65 +478,50 @@ export default class Screenshot {
   #initSnipperEvent () {
     const container = this.#container
     const snipper = this.#snipper
-    const resizer = this.#resizer
-    let moved = false
-    addDragEvent({
-      node: container,
-      downCallback: () => {
-        snipper.style.borderColor = 'rgba(0,0,0,0.6)'
-      },
-      moveCallback: ({ endPosition, startPosition }) => {
-        moved = true
-        const bounding = container.getBoundingClientRect()
-        this.#snipInfo = {
-          width: Math.abs(endPosition.x - startPosition.x),
-          height: Math.abs(endPosition.y - startPosition.y),
-          left: Math.min(endPosition.x, startPosition.x) - bounding.x,
-          top: Math.min(endPosition.y, startPosition.y) - bounding.y
+    if (!this.#options.autoFull) {
+      let moved = false
+      addDragEvent({
+        node: container,
+        downCallback: () => {
+          snipper.style.borderColor = 'rgba(0,0,0,0.6)'
+        },
+        moveCallback: ({ endPosition, startPosition }) => {
+          moved = true
+          const bounding = container.getBoundingClientRect()
+          this.#snipInfo = {
+            width: Math.abs(endPosition.x - startPosition.x),
+            height: Math.abs(endPosition.y - startPosition.y),
+            left: Math.min(endPosition.x, startPosition.x) - bounding.x,
+            top: Math.min(endPosition.y, startPosition.y) - bounding.y
+          }
+        },
+        upCallback: () => {
+          if (moved) {
+            snipper.style.cursor = 'default'
+            this.#initResizerEvent()
+          } else {
+            this.#snipFull()
+          }
         }
-      },
-      upCallback: () => {
-        if (moved) {
-          snipper.style.cursor = 'default'
-          this.#initResizer()
-          this.#initDrawer()
-          this.#initToolbar()
-          let originLeft, originTop
-          this.#events.resizerEvent = addDragEvent({
-            node: resizer,
-            upNode: container,
-            moveNode: container,
-            last: true,
-            downCallback: () => {
-              this.#drawer = null
-              this.#destroyResizer()
-              this.#toolbar = null
-              originLeft = this.#snipInfo.left
-              originTop = this.#snipInfo.top
-            },
-            moveCallback: ({ endPosition, startPosition }) => {
-              const left = originLeft + endPosition.x - startPosition.x
-              const top = originTop + endPosition.y - startPosition.y
-              const containerStyle = window.getComputedStyle(container)
-              const containerWidth = parseFloat(containerStyle.width)
-              const containerHeight = parseFloat(containerStyle.height)
-              this.#snipInfo = {
-                ...this.#snipInfo,
-                left: left >= 0 ? (left + this.#snipInfo.width <= containerWidth ? left : containerWidth - this.#snipInfo.width) : 0,
-                top: top >= 0 ? (top + this.#snipInfo.height <= containerHeight ? top : containerHeight - this.#snipInfo.height) : 0
-              }
-            },
-            upCallback: () => {
-              this.#initResizer()
-              this.#initDrawer()
-              this.#initToolbar()
-            }
-          })
-        } else {
-          this.#initSnipperEvent()
-        }
-      }
-    })
+      })
+    } else {
+      this.#snipFull()
+    }
+  }
+
+  #snipFull () {
+    const container = this.#container
+    const snipper = this.#snipper
+    const style = window.getComputedStyle(container)
+    this.#snipInfo = {
+      width: parseFloat(style.width),
+      height: parseFloat(style.height),
+      left: 0,
+      top: 0
+    }
+    snipper.style.borderColor = 'rgba(0,0,0,0.6)'
+    snipper.style.cursor = 'default'
+    this.#initResizerEvent()
   }
   // endregion
 
@@ -528,14 +569,59 @@ export default class Screenshot {
           this.#snipInfo = tmpSnipInfo
         },
         upCallback: () => {
-          this.#initToolbar()
-          this.#initDrawer()
+          this.#waitForReady(() => {
+            this.#initDrawer()
+            this.#initToolbar()
+          })
           resizer.style.cursor = 'move'
         }
       }))
       wrapper.append(resizerItem)
     }
     resizer.append(wrapper)
+  }
+
+  #initResizerEvent () {
+    const container = this.#container
+    const resizer = this.#resizer
+    this.#initResizer()
+    this.#waitForReady(() => {
+      this.#initDrawer()
+      this.#initToolbar()
+    })
+    let originLeft, originTop
+    this.#events.resizerEvent = addDragEvent({
+      node: resizer,
+      upNode: container,
+      moveNode: container,
+      last: true,
+      downCallback: () => {
+        this.#drawer = null
+        this.#destroyResizer()
+        this.#toolbar = null
+        originLeft = this.#snipInfo.left
+        originTop = this.#snipInfo.top
+      },
+      moveCallback: ({ endPosition, startPosition }) => {
+        const left = originLeft + endPosition.x - startPosition.x
+        const top = originTop + endPosition.y - startPosition.y
+        const containerStyle = window.getComputedStyle(container)
+        const containerWidth = parseFloat(containerStyle.width)
+        const containerHeight = parseFloat(containerStyle.height)
+        this.#snipInfo = {
+          ...this.#snipInfo,
+          left: left >= 0 ? (left + this.#snipInfo.width <= containerWidth ? left : containerWidth - this.#snipInfo.width) : 0,
+          top: top >= 0 ? (top + this.#snipInfo.height <= containerHeight ? top : containerHeight - this.#snipInfo.height) : 0
+        }
+      },
+      upCallback: () => {
+        this.#initResizer()
+        this.#waitForReady(() => {
+          this.#initDrawer()
+          this.#initToolbar()
+        })
+      }
+    })
   }
 
   #destroyResizer () {
@@ -557,6 +643,28 @@ export default class Screenshot {
     this.#resizer.remove()
   }
   // endregion
+
+  #waitForReady (func, type = 'replace') {
+    if (this.#status === 'ready') {
+      func()
+    } else {
+      this.#events.readyEvent = this.#events.readyEvent || []
+      switch (type) {
+        case 'replace': {
+          this.#events.readyEvent = [func]
+          break
+        }
+        case 'add': {
+          this.#events.readyEvent.push(func)
+          break
+        }
+        case 'clear': {
+          this.#events.readyEvent = []
+          break
+        }
+      }
+    }
+  }
 
   // region drawer
   #initDrawer () {
