@@ -501,7 +501,7 @@ export default class Screenshot {
         },
         upCallback: () => {
           if (moved) {
-            if (this.#snipInfo.width > 2 && this.#snipInfo.height > 2) {
+            if (this.#snipInfo.width >= 10 && this.#snipInfo.height >= 10) {
               snipper.style.cursor = 'default'
               this.#initResizerEvent()
             } else {
@@ -586,20 +586,21 @@ export default class Screenshot {
         moveCallback: ({ endPosition, startPosition }) => {
           const x = endPosition.x - startPosition.x
           const y = endPosition.y - startPosition.y
+          const style = window.getComputedStyle(container)
           let tmpSnipInfo = { ..._snipInfo }
           if (direction.includes('top')) {
-            tmpSnipInfo.top = _snipInfo.top + y < _snipInfo.top + _snipInfo.height - 10 ? _snipInfo.top + y : _snipInfo.top + _snipInfo.height - 10
-            tmpSnipInfo.height = _snipInfo.height - y > 10 ? _snipInfo.height - y : 10
+            tmpSnipInfo.top = _snipInfo.top + y < _snipInfo.top + _snipInfo.height - 10 ? (_snipInfo.top + y >= 0 ? _snipInfo.top + y : 0) : _snipInfo.top + _snipInfo.height - 10
+            tmpSnipInfo.height = _snipInfo.height - y > 10 ? (_snipInfo.top + y >= 0 ? _snipInfo.height - y : _snipInfo.height + _snipInfo.top) : 10
           }
           if (direction.includes('right')) {
-            tmpSnipInfo.width = _snipInfo.width + x > 10 ? _snipInfo.width + x : 10
+            tmpSnipInfo.width = _snipInfo.width + x > 10 ? (_snipInfo.left + _snipInfo.width + x <= parseFloat(style.width) ? _snipInfo.width + x : parseFloat(style.width) - _snipInfo.left) : 10
           }
           if (direction.includes('bottom')) {
-            tmpSnipInfo.height = _snipInfo.height + y > 10 ? _snipInfo.height + y : 10
+            tmpSnipInfo.height = _snipInfo.height + y > 10 ? (_snipInfo.top + _snipInfo.height + y <= parseFloat(style.height) ? _snipInfo.height + y : parseFloat(style.height) - _snipInfo.top) : 10
           }
           if (direction.includes('left')) {
-            tmpSnipInfo.left = _snipInfo.left + x < _snipInfo.left + _snipInfo.width - 10 ? _snipInfo.left + x : _snipInfo.left + _snipInfo.width - 10
-            tmpSnipInfo.width = _snipInfo.width - x > 10 ? _snipInfo.width - x : 10
+            tmpSnipInfo.left = _snipInfo.left + x < _snipInfo.left + _snipInfo.width - 10 ? (_snipInfo.left + x >= 0 ? _snipInfo.left + x : 0) : _snipInfo.left + _snipInfo.width - 10
+            tmpSnipInfo.width = _snipInfo.width - x > 10 ? (_snipInfo.left + x >= 0 ? _snipInfo.width - x : _snipInfo.width + _snipInfo.left) : 10
           }
           if (this.#options.autoWelt) {
             tmpSnipInfo = this.#autoWelt(tmpSnipInfo)
