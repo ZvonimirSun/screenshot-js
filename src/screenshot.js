@@ -497,8 +497,12 @@ export default class Screenshot {
         },
         upCallback: () => {
           if (moved) {
-            snipper.style.cursor = 'default'
-            this.#initResizerEvent()
+            if (this.#snipInfo.width > 2 && this.#snipInfo.height > 2) {
+              snipper.style.cursor = 'default'
+              this.#initResizerEvent()
+            } else {
+              this.#snipFull()
+            }
           } else {
             this.#snipFull()
           }
