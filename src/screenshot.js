@@ -11,7 +11,7 @@ import {
   log,
   error
 } from './utils.js'
-import { merge } from 'lodash-es'
+import { clone, isNumber, merge } from 'lodash-es'
 import './screenshot.scss'
 
 const { Canvas, Textbox, PencilBrush } = fabric
@@ -121,8 +121,8 @@ export default class Screenshot {
    * @param {HTMLImageElement|string} img
    * @param {function} [destroyCallback]
    * @param {function} [readyCallback]
-   * @param {boolean} [autoWelt]
-   * @param {boolean} [autoFull]
+   * @param {boolean|number|undefined} [autoWelt]
+   * @param {boolean|undefined} [autoFull]
    */
   constructor ({ node, img, destroyCallback = () => {}, readyCallback = () => {}, autoWelt, autoFull } = {}) {
     if (!(node instanceof window.HTMLElement)) {
@@ -488,12 +488,16 @@ export default class Screenshot {
         moveCallback: ({ endPosition, startPosition }) => {
           moved = true
           const bounding = container.getBoundingClientRect()
-          this.#snipInfo = {
+          let data = {
             width: Math.abs(endPosition.x - startPosition.x),
             height: Math.abs(endPosition.y - startPosition.y),
             left: Math.min(endPosition.x, startPosition.x) - bounding.x,
             top: Math.min(endPosition.y, startPosition.y) - bounding.y
           }
+          if (this.#options.autoWelt) {
+            data = this.#autoWelt(data)
+          }
+          this.#snipInfo = data
         },
         upCallback: () => {
           if (moved) {
@@ -527,6 +531,33 @@ export default class Screenshot {
     snipper.style.cursor = 'default'
     this.#initResizerEvent()
   }
+
+  #autoWelt (snipInfo) {
+    if (!this.#options.autoWelt) {
+      return snipInfo
+    }
+    const style = window.getComputedStyle(this.#container)
+    const data = clone(snipInfo)
+    let distance = 20
+    if (isNumber(this.#options.autoWelt)) {
+      distance = this.#options.autoWelt
+    }
+    if (data.left < distance) {
+      data.width = data.width + data.left
+      data.left = 0
+    }
+    if (data.left + data.width + distance > parseFloat(style.width)) {
+      data.width = parseFloat(style.width) - data.left
+    }
+    if (data.top < distance) {
+      data.height = data.height + data.top
+      data.top = 0
+    }
+    if (data.top + data.height + distance > parseFloat(style.height)) {
+      data.height = parseFloat(style.height) - data.top
+    }
+    return data
+  }
   // endregion
 
   // region resizer
@@ -555,7 +586,7 @@ export default class Screenshot {
         moveCallback: ({ endPosition, startPosition }) => {
           const x = endPosition.x - startPosition.x
           const y = endPosition.y - startPosition.y
-          const tmpSnipInfo = { ..._snipInfo }
+          let tmpSnipInfo = { ..._snipInfo }
           if (direction.includes('top')) {
             tmpSnipInfo.top = _snipInfo.top + y < _snipInfo.top + _snipInfo.height - 10 ? _snipInfo.top + y : _snipInfo.top + _snipInfo.height - 10
             tmpSnipInfo.height = _snipInfo.height - y > 10 ? _snipInfo.height - y : 10
@@ -569,6 +600,9 @@ export default class Screenshot {
           if (direction.includes('left')) {
             tmpSnipInfo.left = _snipInfo.left + x < _snipInfo.left + _snipInfo.width - 10 ? _snipInfo.left + x : _snipInfo.left + _snipInfo.width - 10
             tmpSnipInfo.width = _snipInfo.width - x > 10 ? _snipInfo.width - x : 10
+          }
+          if (this.#options.autoWelt) {
+            tmpSnipInfo = this.#autoWelt(tmpSnipInfo)
           }
           this.#snipInfo = tmpSnipInfo
         },
