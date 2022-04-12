@@ -37,26 +37,8 @@ module.exports = {
     rules: [
       {
         test: /\.m?js$/,
-        exclude: /(node_modules|bower_components)/,
         use: {
-          loader: 'babel-loader',
-          options: {
-            presets: [
-              [
-                '@babel/preset-env',
-                {
-                  targets: {
-                    browsers: [
-                      '> 0.1%',
-                      'last 3 versions',
-                      'not ie <= 8'
-                    ]
-                  }
-                }
-              ]
-            ],
-            plugins: ['@babel/plugin-transform-runtime']
-          }
+          loader: 'babel-loader'
         }
       },
       {
