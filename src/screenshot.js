@@ -645,6 +645,7 @@ export default class Screenshot {
           erasable: false
         }
       )
+      this.#canvas.selectionFullyContained = true
       this.#events.drawEvent = new ScreenshotFabricEvent(this.#canvas)
       this.#events.drawEvent.add('object:added', ({ target }) => {
         target.setControlsVisibility({
@@ -802,23 +803,8 @@ export default class Screenshot {
   }
 
   #addToolText () {
-    const event = createTextbox.bind(this)
-    const tool = this.#addTool({
-      name: '文本',
-      icon: 'text',
-      activeEvent: () => {
-        this.#canvas.defaultCursor = 'text'
-        this.#canvas.selection = false
-        this.#events.drawEvent.add('mouse:down', event)
-      },
-      pauseEvent: () => {
-        this.#canvas.defaultCursor = 'default'
-        this.#canvas.selection = true
-        this.#events.drawEvent.remove('mouse:down', event)
-      }
-    })
-
-    function createTextbox (e) {
+    let tool = null
+    const createTextbox = (e) => {
       const textbox = new Textbox('文本', {
         fill: 'red',
         width: 100,
@@ -853,7 +839,22 @@ export default class Screenshot {
       })
       this.#canvas.setActiveObject(textbox)
       this.#canvas.renderAll()
+      textbox.enterEditing()
     }
+    tool = this.#addTool({
+      name: '文本',
+      icon: 'text',
+      activeEvent: () => {
+        this.#canvas.defaultCursor = 'text'
+        this.#canvas.selection = false
+        this.#events.drawEvent.add('mouse:down', createTextbox)
+      },
+      pauseEvent: () => {
+        this.#canvas.defaultCursor = 'default'
+        this.#canvas.selection = true
+        this.#events.drawEvent.remove('mouse:down', createTextbox)
+      }
+    })
   }
 
   #switchActiveTool (tool) {
