@@ -14,7 +14,7 @@ import {
 import { clone, isNumber, merge } from 'lodash-es'
 import './screenshot.scss'
 
-const { Canvas, Textbox, PencilBrush } = fabric
+const { Canvas, Textbox, PencilBrush, Rect, Ellipse } = fabric
 
 export default class Screenshot {
   #child = {}
@@ -645,7 +645,6 @@ export default class Screenshot {
           erasable: false
         }
       )
-      this.#canvas.selectionFullyContained = true
       this.#events.drawEvent = new ScreenshotFabricEvent(this.#canvas)
       this.#events.drawEvent.add('object:added', ({ target }) => {
         target.setControlsVisibility({
@@ -672,8 +671,8 @@ export default class Screenshot {
     this.#snipper.append(this.#toolbar)
     // 绘制矩形
     this.#addToolSquare()
-    // todo 绘制椭圆
-    // this.#addTool({ name: '椭圆', icon: 'circle' })
+    // 绘制椭圆
+    this.#addToolEllipse()
     this.#addToolWrite()
     this.#addToolMosaic()
     this.#addToolText()
@@ -793,14 +792,15 @@ export default class Screenshot {
       if (squareObject) {
         this.#canvas.remove(squareObject)
       }
-      squareObject = new fabric.Rect({
+      squareObject = new Rect({
         left: Math.min(mouseFrom.x, mouseTo.x),
         top: Math.min(mouseFrom.y, mouseTo.y),
         width: Math.abs(mouseFrom.x - mouseTo.x),
         height: Math.abs(mouseFrom.y - mouseTo.y),
         fill: 'transparent',
         stroke: 'red',
-        strokeWidth: 3
+        strokeWidth: 3,
+        noScaleCache: false
       })
       this.#canvas.add(squareObject)
     }
@@ -808,17 +808,29 @@ export default class Screenshot {
       start = false
       mouseFrom = null
       mouseTo = null
-      squareObject && squareObject.setControlsVisibility({
-        tl: true,
-        tr: true,
-        br: true,
-        bl: true,
-        ml: true,
-        mt: true,
-        mr: true,
-        mb: true,
-        mtr: false
-      })
+      if (squareObject) {
+        squareObject.setControlsVisibility({
+          tl: true,
+          tr: true,
+          br: true,
+          bl: true,
+          ml: true,
+          mt: true,
+          mr: true,
+          mb: true,
+          mtr: false
+        })
+        squareObject.on('scaling', (ev) => {
+          const target = ev.transform.target
+          const width = target.get('width') * target.get('scaleX')
+          const height = target.get('height') * target.get('scaleY')
+          target.set('width', width)
+          target.set('height', height)
+          target.set('scaleX', 1)
+          target.set('scaleY', 1)
+          this.#canvas.renderAll()
+        })
+      }
       squareObject = null
       this.#switchActiveTool(tool)
     }
@@ -826,6 +838,96 @@ export default class Screenshot {
     tool = this.#addTool({
       name: '矩形',
       icon: 'square',
+      activeEvent: () => {
+        this.#events.drawEvent.add('mouse:down', downEvent)
+        this.#events.drawEvent.add('mouse:move', moveEvent)
+        this.#events.drawEvent.add('mouse:up', upEvent)
+        this.#canvas.selection = false
+      },
+      pauseEvent: () => {
+        this.#events.drawEvent.remove('mouse:down', downEvent)
+        this.#events.drawEvent.remove('mouse:move', moveEvent)
+        this.#events.drawEvent.remove('mouse:up', upEvent)
+        this.#canvas.selection = true
+      }
+    })
+  }
+
+  #addToolEllipse () {
+    let ellipseObject = null
+    let start = false
+    let mouseFrom = null
+    let mouseTo = null
+    let tool = null
+
+    const downEvent = ({ e }) => {
+      if (start) {
+        return
+      }
+      mouseFrom = {
+        x: e.clientX - this.#canvas._offset.left,
+        y: e.clientY - this.#canvas._offset.top
+      }
+      ellipseObject = null
+      start = true
+    }
+    const moveEvent = ({ e }) => {
+      if (!start) {
+        return
+      }
+      mouseTo = {
+        x: e.clientX - this.#canvas._offset.left,
+        y: e.clientY - this.#canvas._offset.top
+      }
+      if (ellipseObject) {
+        this.#canvas.remove(ellipseObject)
+      }
+      ellipseObject = new Ellipse({
+        left: Math.min(mouseFrom.x, mouseTo.x),
+        top: Math.min(mouseFrom.y, mouseTo.y),
+        rx: Math.abs(mouseFrom.x - mouseTo.x) / 2,
+        ry: Math.abs(mouseFrom.y - mouseTo.y) / 2,
+        fill: 'transparent',
+        stroke: 'red',
+        strokeWidth: 3,
+        noScaleCache: false
+      })
+      this.#canvas.add(ellipseObject)
+    }
+    const upEvent = () => {
+      start = false
+      mouseFrom = null
+      mouseTo = null
+      if (ellipseObject) {
+        ellipseObject.setControlsVisibility({
+          tl: true,
+          tr: true,
+          br: true,
+          bl: true,
+          ml: true,
+          mt: true,
+          mr: true,
+          mb: true,
+          mtr: false
+        })
+        ellipseObject.on('scaling', (ev) => {
+          const target = ev.transform.target
+          const rx = target.get('rx') * target.get('scaleX')
+          const ry = target.get('ry') * target.get('scaleY')
+          target.set('rx', rx)
+          target.set('ry', ry)
+          target.set('scaleX', 1)
+          target.set('scaleY', 1)
+          this.#canvas.renderAll()
+        })
+      }
+      ellipseObject = null
+      this.#switchActiveTool(tool)
+    }
+
+    tool = this.#addTool({
+      name: '椭圆',
+      icon: 'circle',
       activeEvent: () => {
         this.#events.drawEvent.add('mouse:down', downEvent)
         this.#events.drawEvent.add('mouse:move', moveEvent)
