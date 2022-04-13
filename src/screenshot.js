@@ -670,8 +670,8 @@ export default class Screenshot {
     this.#toolbar = document.createElement('div')
     this.#toolbar.classList.add('screenshot-toolbar')
     this.#snipper.append(this.#toolbar)
-    // todo 绘制矩形
-    // this.#addTool({ name: '矩形', icon: 'square' })
+    // 绘制矩形
+    this.#addToolSquare()
     // todo 绘制椭圆
     // this.#addTool({ name: '椭圆', icon: 'circle' })
     this.#addToolWrite()
@@ -762,6 +762,83 @@ export default class Screenshot {
     const dom = document.createElement('div')
     dom.classList.add('screenshot-toolbar-divider')
     this.#toolbar.append(dom)
+  }
+
+  #addToolSquare () {
+    let squareObject = null
+    let start = false
+    let mouseFrom = null
+    let mouseTo = null
+    let tool = null
+
+    const downEvent = ({ e }) => {
+      if (start) {
+        return
+      }
+      mouseFrom = {
+        x: e.clientX - this.#canvas._offset.left,
+        y: e.clientY - this.#canvas._offset.top
+      }
+      squareObject = null
+      start = true
+    }
+    const moveEvent = ({ e }) => {
+      if (!start) {
+        return
+      }
+      mouseTo = {
+        x: e.clientX - this.#canvas._offset.left,
+        y: e.clientY - this.#canvas._offset.top
+      }
+      if (squareObject) {
+        this.#canvas.remove(squareObject)
+      }
+      squareObject = new fabric.Rect({
+        left: Math.min(mouseFrom.x, mouseTo.x),
+        top: Math.min(mouseFrom.y, mouseTo.y),
+        width: Math.abs(mouseFrom.x - mouseTo.x),
+        height: Math.abs(mouseFrom.y - mouseTo.y),
+        fill: 'transparent',
+        stroke: 'red',
+        strokeWidth: 3
+      })
+      this.#canvas.add(squareObject)
+    }
+    const upEvent = () => {
+      start = false
+      mouseFrom = null
+      mouseTo = null
+      squareObject && squareObject.setControlsVisibility({
+        tl: true,
+        tr: true,
+        br: true,
+        bl: true,
+        ml: true,
+        mt: true,
+        mr: true,
+        mb: true,
+        mtr: false
+      })
+      squareObject = null
+      this.#switchActiveTool(tool)
+    }
+
+    tool = this.#addTool({
+      name: '矩形',
+      icon: 'square',
+      activeEvent: () => {
+        this.#events.drawEvent.add('mouse:down', downEvent)
+        this.#events.drawEvent.add('mouse:move', moveEvent)
+        this.#events.drawEvent.add('mouse:up', upEvent)
+        this.#canvas.selection = false
+      },
+      pauseEvent: () => {
+        this.#events.drawEvent.remove('mouse:down', downEvent)
+        this.#events.drawEvent.remove('mouse:move', moveEvent)
+        this.#events.drawEvent.remove('mouse:up', upEvent)
+        this.#canvas.selection = true
+      }
+    })
   }
 
   #addToolWrite () {
