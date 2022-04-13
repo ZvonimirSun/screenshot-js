@@ -17,91 +17,6 @@ import './screenshot.scss'
 const { Canvas, Textbox, PencilBrush } = fabric
 
 export default class Screenshot {
-  static getImage ({ node, width, height, callback = () => {}, options = {} }) {
-    return new Promise((resolve, reject) => {
-      if (!(node instanceof window.HTMLElement)) {
-        reject(new Error('node must be HTMLElement'))
-      }
-      let scale
-      if (width && height) {
-        scale = Math.min(node.offsetWidth / width, node.offsetHeight / height)
-      } else {
-        scale = 1
-      }
-      const style = {
-        transform: 'scale(' + scale + ')',
-        transformOrigin: 'top left',
-        width: node.offsetWidth + 'px',
-        height: node.offsetHeight + 'px'
-      }
-      const param = {
-        height: node.offsetHeight * scale,
-        width: node.offsetWidth * scale,
-        quality: 1,
-        style,
-        cacheBust: true,
-        ...options
-      }
-      domToImage
-        .toBlob(node, param)
-        .then((val) => {
-          callback(val)
-          resolve(val)
-        })
-        .catch((err) => {
-          reject(err)
-        })
-    })
-  }
-
-  static getMergeImage ({ imgList = [], width, height, callback = () => {} }) {
-    return new Promise((resolve) => {
-      const canvas = document.createElement('canvas')
-      canvas.width = width
-      canvas.height = height
-      const context = canvas.getContext('2d')
-
-      let flag = 0
-      imgList.forEach((item) => {
-        if (item.img instanceof window.HTMLImageElement) {
-          context.drawImage(item.img, 0, 0, item.width, item.height)
-          flag++
-        } else if (typeof item.img === 'string') {
-          const img = new window.Image()
-          img.src = item.img
-          img.onload = () => {
-            context.drawImage(
-              img,
-              item.x || 0,
-              item.y || 0,
-              item.width,
-              item.height
-            )
-            flag++
-            if (flag === imgList.length) {
-              const data = canvas.toDataURL()
-              callback(data)
-              resolve(data)
-            }
-          }
-          img.onerror = () => {
-            flag++
-            if (flag === imgList.length) {
-              const data = canvas.toDataURL()
-              callback(data)
-              resolve(data)
-            }
-          }
-        }
-      })
-      if (flag === imgList.length) {
-        const data = canvas.toDataURL()
-        callback(data)
-        resolve(data)
-      }
-    })
-  }
-
   #child = {}
   #events = {}
   #infos = {
@@ -112,17 +27,17 @@ export default class Screenshot {
   #destroyed = false
 
   #options = {
-    autoWelt: false,
+    autoWelt: 20,
     autoFull: false
   }
 
   /**
-   * @param {HTMLElement} node
-   * @param {HTMLImageElement|string} img
-   * @param {function} [destroyCallback]
-   * @param {function} [readyCallback]
-   * @param {boolean|number|undefined} [autoWelt]
-   * @param {boolean|undefined} [autoFull]
+   * @param {HTMLElement} node 容器
+   * @param {HTMLImageElement|string} img 底图
+   * @param {function} [destroyCallback] destroy回调
+   * @param {function} [readyCallback] ready回调
+   * @param {number|undefined} [autoWelt] 自动贴边距离
+   * @param {boolean|undefined} [autoFull] 自动截全屏
    */
   constructor ({ node, img, destroyCallback = () => {}, readyCallback = () => {}, autoWelt, autoFull } = {}) {
     if (!(node instanceof window.HTMLElement)) {
@@ -725,7 +640,10 @@ export default class Screenshot {
       this.#infos.fabricDrawer = new Canvas(this.#drawer)
       this.#canvas.setBackgroundImage(
         data.src,
-        this.#canvas.renderAll.bind(this.#canvas)
+        undefined,
+        {
+          erasable: false
+        }
       )
       this.#events.drawEvent = new ScreenshotFabricEvent(this.#canvas)
       this.#events.drawEvent.add('object:added', ({ target }) => {
@@ -949,4 +867,89 @@ export default class Screenshot {
     tool.active = !tool.active
   }
   // endregion
+
+  static getImage ({ node, width, height, callback = () => {}, options = {} }) {
+    return new Promise((resolve, reject) => {
+      if (!(node instanceof window.HTMLElement)) {
+        reject(new Error('node must be HTMLElement'))
+      }
+      let scale
+      if (width && height) {
+        scale = Math.min(node.offsetWidth / width, node.offsetHeight / height)
+      } else {
+        scale = 1
+      }
+      const style = {
+        transform: 'scale(' + scale + ')',
+        transformOrigin: 'top left',
+        width: node.offsetWidth + 'px',
+        height: node.offsetHeight + 'px'
+      }
+      const param = {
+        height: node.offsetHeight * scale,
+        width: node.offsetWidth * scale,
+        quality: 1,
+        style,
+        cacheBust: true,
+        ...options
+      }
+      domToImage
+        .toBlob(node, param)
+        .then((val) => {
+          callback(val)
+          resolve(val)
+        })
+        .catch((err) => {
+          reject(err)
+        })
+    })
+  }
+
+  static getMergeImage ({ imgList = [], width, height, callback = () => {} }) {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const context = canvas.getContext('2d')
+
+      let flag = 0
+      imgList.forEach((item) => {
+        if (item.img instanceof window.HTMLImageElement) {
+          context.drawImage(item.img, 0, 0, item.width, item.height)
+          flag++
+        } else if (typeof item.img === 'string') {
+          const img = new window.Image()
+          img.src = item.img
+          img.onload = () => {
+            context.drawImage(
+              img,
+              item.x || 0,
+              item.y || 0,
+              item.width,
+              item.height
+            )
+            flag++
+            if (flag === imgList.length) {
+              const data = canvas.toDataURL()
+              callback(data)
+              resolve(data)
+            }
+          }
+          img.onerror = () => {
+            flag++
+            if (flag === imgList.length) {
+              const data = canvas.toDataURL()
+              callback(data)
+              resolve(data)
+            }
+          }
+        }
+      })
+      if (flag === imgList.length) {
+        const data = canvas.toDataURL()
+        callback(data)
+        resolve(data)
+      }
+    })
+  }
 }

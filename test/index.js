@@ -5,9 +5,7 @@ async function test () {
     img: 'https://img.iszy.xyz/1648524178925.png?x-oss-process=style/big',
     destroyCallback () {
       console.log('destroyed')
-    },
-    autoWelt: false,
-    autoFull: true
+    }
   })
 }
 
