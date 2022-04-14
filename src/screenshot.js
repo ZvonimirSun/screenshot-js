@@ -318,11 +318,13 @@ export default class Screenshot {
         if (tmp && tmp.isEditing) {
           return
         }
-        const objects = tmp ? (tmp._objects ? tmp._objects : [tmp]) : []
-        objects.forEach(object => {
-          this.#canvas.remove(object)
-        })
-        this.#canvas.discardActiveObject()?.renderAll()
+        const objects = tmp ? (tmp._objects ? tmp._objects : [tmp]) : null
+        if (objects) {
+          objects.forEach(object => {
+            this.#canvas.remove(object)
+          })
+          this.#canvas.discardActiveObject()?.renderAll()
+        }
       }
     }
   }
@@ -774,10 +776,7 @@ export default class Screenshot {
       if (start) {
         return
       }
-      mouseFrom = {
-        x: e.clientX - this.#canvas._offset.left,
-        y: e.clientY - this.#canvas._offset.top
-      }
+      mouseFrom = this.#canvas.getPointer(e)
       squareObject = null
       start = true
     }
@@ -785,10 +784,7 @@ export default class Screenshot {
       if (!start) {
         return
       }
-      mouseTo = {
-        x: e.clientX - this.#canvas._offset.left,
-        y: e.clientY - this.#canvas._offset.top
-      }
+      mouseTo = this.#canvas.getPointer(e)
       if (squareObject) {
         this.#canvas.remove(squareObject)
       }
@@ -1048,6 +1044,7 @@ export default class Screenshot {
   }
   // endregion
 
+  // region static functions
   static getImage ({ node, width, height, callback = () => {}, options = {} }) {
     return new Promise((resolve, reject) => {
       if (!(node instanceof window.HTMLElement)) {
@@ -1132,4 +1129,5 @@ export default class Screenshot {
       }
     })
   }
+  // endregion
 }
