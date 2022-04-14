@@ -323,7 +323,8 @@ export default class Screenshot {
           objects.forEach(object => {
             this.#canvas.remove(object)
           })
-          this.#canvas.discardActiveObject()?.renderAll()
+          this.#canvas.discardActiveObject()
+          this.#canvas.requestRenderAll()
         }
       }
     }
@@ -824,7 +825,6 @@ export default class Screenshot {
           target.set('height', height)
           target.set('scaleX', 1)
           target.set('scaleY', 1)
-          this.#canvas.renderAll()
         })
       }
       squareObject = null
@@ -914,7 +914,6 @@ export default class Screenshot {
           target.set('ry', ry)
           target.set('scaleX', 1)
           target.set('scaleY', 1)
-          this.#canvas.renderAll()
         })
       }
       ellipseObject = null
@@ -1013,7 +1012,7 @@ export default class Screenshot {
         mtr: false
       })
       this.#canvas.setActiveObject(textbox)
-      this.#canvas.renderAll()
+      this.#canvas.requestRenderAll()
       textbox.enterEditing()
     }
     tool = this.#addTool({
