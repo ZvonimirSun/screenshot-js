@@ -14,7 +14,7 @@ import {
 import { clone, isNumber, merge } from 'lodash-es'
 import './screenshot.scss'
 
-const { Canvas, Textbox, PencilBrush, Rect, Ellipse } = fabric
+const { Canvas, Textbox, PencilBrush, Rect, Ellipse, Path, Line, Group } = fabric
 
 export default class Screenshot {
   #child = {}
@@ -321,7 +321,12 @@ export default class Screenshot {
         const objects = tmp ? (tmp._objects ? tmp._objects : [tmp]) : null
         if (objects) {
           objects.forEach(object => {
-            this.#canvas.remove(object)
+            if (object.group) {
+              this.#canvas.remove(object.group)
+              this.#canvas.remove(object)
+            } else {
+              this.#canvas.remove(object)
+            }
           })
           this.#canvas.discardActiveObject()
           this.#canvas.requestRenderAll()
@@ -676,6 +681,7 @@ export default class Screenshot {
     this.#addToolSquare()
     // 绘制椭圆
     this.#addToolEllipse()
+    this.#addToolArrow()
     this.#addToolWrite()
     this.#addToolMosaic()
     this.#addToolText()
@@ -768,21 +774,21 @@ export default class Screenshot {
 
   #addToolSquare () {
     let squareObject = null
-    let start = false
+    let mouseDown = false
     let mouseFrom = null
     let mouseTo = null
     let tool = null
 
     const downEvent = ({ e }) => {
-      if (start) {
+      if (mouseDown) {
         return
       }
       mouseFrom = this.#canvas.getPointer(e)
       squareObject = null
-      start = true
+      mouseDown = true
     }
     const moveEvent = ({ e }) => {
-      if (!start) {
+      if (!mouseDown) {
         return
       }
       mouseTo = this.#canvas.getPointer(e)
@@ -802,7 +808,7 @@ export default class Screenshot {
       this.#canvas.add(squareObject)
     }
     const upEvent = () => {
-      start = false
+      mouseDown = false
       mouseFrom = null
       mouseTo = null
       if (squareObject) {
@@ -825,6 +831,7 @@ export default class Screenshot {
           target.set('height', height)
           target.set('scaleX', 1)
           target.set('scaleY', 1)
+          this.#canvas.requestRenderAll()
         })
       }
       squareObject = null
@@ -851,30 +858,24 @@ export default class Screenshot {
 
   #addToolEllipse () {
     let ellipseObject = null
-    let start = false
+    let mouseDown = false
     let mouseFrom = null
     let mouseTo = null
     let tool = null
 
     const downEvent = ({ e }) => {
-      if (start) {
+      if (mouseDown) {
         return
       }
-      mouseFrom = {
-        x: e.clientX - this.#canvas._offset.left,
-        y: e.clientY - this.#canvas._offset.top
-      }
+      mouseFrom = this.#canvas.getPointer(e)
       ellipseObject = null
-      start = true
+      mouseDown = true
     }
     const moveEvent = ({ e }) => {
-      if (!start) {
+      if (!mouseDown) {
         return
       }
-      mouseTo = {
-        x: e.clientX - this.#canvas._offset.left,
-        y: e.clientY - this.#canvas._offset.top
-      }
+      mouseTo = this.#canvas.getPointer(e)
       if (ellipseObject) {
         this.#canvas.remove(ellipseObject)
       }
@@ -891,7 +892,7 @@ export default class Screenshot {
       this.#canvas.add(ellipseObject)
     }
     const upEvent = () => {
-      start = false
+      mouseDown = false
       mouseFrom = null
       mouseTo = null
       if (ellipseObject) {
@@ -914,6 +915,7 @@ export default class Screenshot {
           target.set('ry', ry)
           target.set('scaleX', 1)
           target.set('scaleY', 1)
+          this.#canvas.requestRenderAll()
         })
       }
       ellipseObject = null
@@ -923,6 +925,168 @@ export default class Screenshot {
     tool = this.#addTool({
       name: '椭圆',
       icon: 'circle',
+      activeEvent: () => {
+        this.#events.drawEvent.add('mouse:down', downEvent)
+        this.#events.drawEvent.add('mouse:move', moveEvent)
+        this.#events.drawEvent.add('mouse:up', upEvent)
+        this.#canvas.selection = false
+      },
+      pauseEvent: () => {
+        this.#events.drawEvent.remove('mouse:down', downEvent)
+        this.#events.drawEvent.remove('mouse:move', moveEvent)
+        this.#events.drawEvent.remove('mouse:up', upEvent)
+        this.#canvas.selection = true
+      }
+    })
+  }
+
+  #addToolArrow () {
+    let arrowHeadObject = null
+    let arrowLineObject = null
+    let arrowObject = null
+    let mouseDown = false
+    let mouseFrom = null
+    let mouseTo = null
+    let tool = null
+
+    const strokeWidth = 3
+
+    const downEvent = ({ e }) => {
+      if (mouseDown) {
+        return
+      }
+      mouseFrom = this.#canvas.getPointer(e)
+
+      arrowLineObject = new Line([0, 0, 0, 0], {
+        top: 0,
+        left: 0,
+        stroke: 'red',
+        strokeWidth: strokeWidth,
+        objectCaching: false,
+        originX: 'left',
+        originY: 'center'
+      })
+
+      arrowHeadObject = new Path('M 0 0 L 20 10 L 0 20 z', {
+        left: -20,
+        top: 0,
+        fill: 'red',
+        stroke: '',
+        strokeWidth: 0,
+        objectCaching: false,
+        originX: 'left',
+        originY: 'center'
+      })
+
+      arrowObject = new Group([arrowLineObject, arrowHeadObject], {
+        left: mouseFrom.x,
+        top: mouseFrom.y,
+        objectCaching: false,
+        originX: 'left',
+        originY: 'center',
+        lockScalingY: true,
+        lockScalingFlip: true
+      })
+      this.#canvas.add(arrowObject)
+      mouseDown = true
+    }
+    const moveEvent = ({ e }) => {
+      if (!mouseDown) {
+        return
+      }
+      mouseTo = this.#canvas.getPointer(e)
+      if (arrowObject) {
+        this.#canvas.remove(arrowObject)
+      }
+
+      const width = Math.sqrt(Math.pow(mouseTo.x - mouseFrom.x, 2) + Math.pow(mouseTo.y - mouseFrom.y, 2))
+      const angle = Math.atan2(mouseTo.y - mouseFrom.y, mouseTo.x - mouseFrom.x) * 180 / Math.PI
+
+      arrowLineObject.set({
+        x2: width > 20 ? width - 20 : 0,
+        originX: 'left',
+        originY: 'center'
+      })
+      arrowLineObject.setCoords()
+      arrowHeadObject.set({
+        left: width - 20,
+        originX: 'left',
+        originY: 'center'
+      })
+      arrowHeadObject.setCoords()
+      arrowObject = new Group([arrowLineObject, arrowHeadObject], {
+        left: mouseFrom.x,
+        top: mouseFrom.y,
+        objectCaching: false,
+        angle,
+        originX: 'left',
+        originY: 'center',
+        lockScalingY: true,
+        lockScalingFlip: true
+      })
+      this.#canvas.add(arrowObject)
+      this.#canvas.requestRenderAll()
+    }
+    const upEvent = () => {
+      mouseDown = false
+      if (arrowObject) {
+        arrowObject.setControlsVisibility({
+          tl: false,
+          tr: false,
+          br: false,
+          bl: false,
+          ml: false,
+          mt: false,
+          mr: true,
+          mb: false,
+          mtr: false
+        })
+        arrowObject.on('scaling', (e) => {
+          const object = e.transform.target
+          const originPointer = { x: object.left, y: object.top }
+          const pointer = this.#canvas.getPointer(e)
+          const width = Math.sqrt(Math.pow(pointer.x - originPointer.x, 2) + Math.pow(pointer.y - originPointer.y, 2))
+          const angle = Math.atan2(pointer.y - originPointer.y, pointer.x - originPointer.x) * 180 / Math.PI
+          object._objects[0].set({
+            x1: -width / 2,
+            x2: width / 2 - 20,
+            y1: 0,
+            y2: 0,
+            scaleX: 1,
+            scaleY: 1,
+            originX: 'left',
+            originY: 'center'
+          })
+          object._objects[0].setCoords()
+          object._objects[1].set({
+            left: width / 2 - 20,
+            top: 0,
+            scaleX: 1,
+            scaleY: 1,
+            originX: 'left',
+            originY: 'center'
+          })
+          object._objects[1].setCoords()
+          object.set({
+            left: originPointer.x,
+            top: originPointer.y,
+            angle,
+            width,
+            scaleX: 1,
+            scaleY: 1,
+            originX: 'left',
+            originY: 'center'
+          })
+          this.#canvas.requestRenderAll()
+        })
+      }
+      arrowObject = null
+      this.#switchActiveTool(tool)
+    }
+
+    tool = this.#addTool({
+      name: '箭头',
+      icon: 'arrow-right-up',
       activeEvent: () => {
         this.#events.drawEvent.add('mouse:down', downEvent)
         this.#events.drawEvent.add('mouse:move', moveEvent)
