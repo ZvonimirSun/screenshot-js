@@ -28,7 +28,11 @@ export default class Screenshot {
 
   #options = {
     autoWelt: 20,
-    autoFull: false
+    autoFull: false,
+    okColor: undefined,
+    cancelColor: undefined,
+    btnColor: undefined,
+    btnSize: undefined
   }
 
   /**
@@ -38,8 +42,23 @@ export default class Screenshot {
    * @param {function} [readyCallback] ready回调
    * @param {number|undefined} [autoWelt] 自动贴边距离
    * @param {boolean|undefined} [autoFull] 自动截全屏
+   * @param {string|undefined} [okColor] 确定按钮颜色
+   * @param {string|undefined} [cancelColor] 取消按钮颜色
+   * @param {string|undefined} [btnColor] 按钮颜色
+   * @param {string|undefined} [btnSize] 按钮大小
    */
-  constructor ({ node, img, destroyCallback = () => {}, readyCallback = () => {}, autoWelt, autoFull } = {}) {
+  constructor ({
+    node,
+    img,
+    destroyCallback = () => {},
+    readyCallback = () => {},
+    autoWelt,
+    autoFull,
+    okColor,
+    cancelColor,
+    btnColor,
+    btnSize
+  } = {}) {
     if (!(node instanceof window.HTMLElement)) {
       throw new Error('node must be HTMLElement')
     }
@@ -51,7 +70,11 @@ export default class Screenshot {
 
     merge(this.#options, {
       autoWelt,
-      autoFull
+      autoFull,
+      okColor,
+      cancelColor,
+      btnColor,
+      btnSize
     })
 
     try {
@@ -676,6 +699,9 @@ export default class Screenshot {
   #initToolbar () {
     this.#toolbar = document.createElement('div')
     this.#toolbar.classList.add('screenshot-toolbar')
+    if (this.#options.btnSize) {
+      this.#toolbar.style.fontSize = this.#options.btnSize
+    }
     this.#snipper.append(this.#toolbar)
     // 绘制矩形
     this.#addToolSquare()
@@ -701,7 +727,7 @@ export default class Screenshot {
     this.#addTool({
       name: '退出',
       icon: 'close',
-      color: 'red',
+      color: this.#options.cancelColor || 'red',
       clickEvent: () => {
         this.destroy()
       }
@@ -709,7 +735,7 @@ export default class Screenshot {
     this.#addTool({
       name: '完成',
       icon: 'check',
-      color: 'green',
+      color: this.#options.okColor || 'green',
       clickEvent: () => {
         dataURLToBlob(this.#canvas.toDataURL()).then((blob) => {
           try {
@@ -743,7 +769,7 @@ export default class Screenshot {
     }
   }
 
-  #addTool ({ name = '', icon = '', color = 'white', disabled = false, clickEvent, activeEvent, pauseEvent } = {}) {
+  #addTool ({ name = '', icon = '', color = this.#options.btnColor || 'white', disabled = false, clickEvent, activeEvent, pauseEvent } = {}) {
     this.#tools[name] = new ScreenshotTool({
       name,
       icon,
