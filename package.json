@@ -1,8 +1,8 @@
 {
   "name": "screenshot-js",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "A screenshot tool for js",
-  "main": "./dist/screenshot.umd.js",
+  "main": "./src/screenshot.js",
   "scripts": {
     "start": "webpack-dev-server --mode development --config ./webpack.config.js",
     "build": "cross-env production=true webpack",
@@ -13,7 +13,7 @@
     "url": "git+https://github.com/ZvonimirSun/screenshot-js.git"
   },
   "files": [
-    "/dist"
+    "/src"
   ],
   "author": "ZvonimirSun",
   "license": "GPL-3.0",
