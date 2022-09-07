@@ -1,15 +1,13 @@
 import { removeAll } from './utils.js'
 
 export default class ScreenshotToolEvent {
-  #list = {}
-  /**
-   * 工具节点
-   * @type HTMLElement
-   */
-  #node
-
   constructor (node) {
-    this.#node = node
+    this._list = {}
+    /**
+     * 工具节点
+     * @type HTMLElement
+     */
+    this._node = node
   }
 
   add (types, func) {
@@ -21,46 +19,46 @@ export default class ScreenshotToolEvent {
     }
     const typeList = types.split(',')
     for (const type of typeList) {
-      this.#list[type] = this.#list[type] || []
-      this.#list[type].push(func)
-      this.#node?.addEventListener(type, func)
+      this._list[type] = this._list[type] || []
+      this._list[type].push(func)
+      this._node && this._node.addEventListener(type, func)
     }
   }
 
   remove (types, func) {
     if (!types) {
       if (func) {
-        for (const type in this.#list) {
-          removeAll(this.#list[type], func, (event) => {
+        for (const type in this._list) {
+          removeAll(this._list[type], func, (event) => {
             if (event) {
-              this.#node?.removeEventListener(type, event)
+              this._node && this._node.removeEventListener(type, event)
             }
           })
         }
       } else {
-        for (const type in this.#list) {
-          for (const event of (this.#list[type] || [])) {
-            this.#node?.removeEventListener(type, event)
+        for (const type in this._list) {
+          for (const event of (this._list[type] || [])) {
+            this._node && this._node.removeEventListener(type, event)
           }
-          delete this.#list[type]
+          delete this._list[type]
         }
       }
     } else {
       const typeList = types.split(',').map(item => item.trim()).filter(item => !!item)
       if (func) {
         for (const type of typeList) {
-          removeAll(this.#list[type], func, (event) => {
+          removeAll(this._list[type], func, (event) => {
             if (event) {
-              this.#node?.removeEventListener(type, event)
+              this._node && this._node.removeEventListener(type, event)
             }
           })
         }
       } else {
         for (const type of typeList) {
-          for (const event of (this.#list[type] || [])) {
-            this.#node?.removeEventListener(type, event)
+          for (const event of (this._list[type] || [])) {
+            this._node && this._node.removeEventListener(type, event)
           }
-          delete this.#list[type]
+          delete this._list[type]
         }
       }
     }

@@ -7,6 +7,10 @@
   position: relative;
   user-select: none;
 
+  * {
+    box-sizing: content-box;
+  }
+
   &-image {
     position: absolute;
     top: 0;
