@@ -1248,26 +1248,28 @@ export default class Screenshot {
   // endregion
 
   // region static functions
-  static getImage ({ node, width, height, callback = () => {}, options = {} }) {
+  static getImage ({ node, width, height, scale, callback = () => {}, options = {} }) {
     return new Promise((resolve, reject) => {
       if (!(node instanceof window.HTMLElement)) {
         reject(new Error('node must be HTMLElement'))
       }
-      let scale
+      let _scale
       if (width && height) {
-        scale = Math.min(node.offsetWidth / width, node.offsetHeight / height)
+        _scale = Math.max(width / node.offsetWidth, height / node.offsetHeight)
+      } else if (scale != null) {
+        _scale = scale
       } else {
-        scale = 1
+        _scale = 1
       }
       const style = {
-        transform: 'scale(' + scale + ')',
+        transform: 'scale(' + _scale + ')',
         transformOrigin: 'top left',
         width: node.offsetWidth + 'px',
         height: node.offsetHeight + 'px'
       }
       const param = {
-        height: node.offsetHeight * scale,
-        width: node.offsetWidth * scale,
+        height: height != null ? height : node.offsetHeight * _scale,
+        width: width != null ? width : node.offsetWidth * _scale,
         quality: 1,
         style,
         cacheBust: true,
