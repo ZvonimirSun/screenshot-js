@@ -1,5 +1,6 @@
 import domToImage from 'dom-to-image'
 import { saveAs } from 'file-saver'
+import { changeDpiBlob } from './ChangeDpi.js'
 import MosaicBrush from './MosaicBrush.js'
 import ScreenshotFabricEvent from './screenshot-fabric-event.js'
 import ScreenshotTool from './screenshot-tool'
@@ -1248,7 +1249,7 @@ export default class Screenshot {
   // endregion
 
   // region static functions
-  static getImage ({ node, width, height, scale, callback = () => {}, options = {} }) {
+  static getImage ({ node, width, height, scale, callback = () => {}, options = {}, dpi }) {
     return new Promise((resolve, reject) => {
       if (!(node instanceof window.HTMLElement)) {
         reject(new Error('node must be HTMLElement'))
@@ -1278,6 +1279,15 @@ export default class Screenshot {
       domToImage
         .toBlob(node, param)
         .then((val) => {
+          if (dpi) {
+            changeDpiBlob(val, dpi).then((blob) => {
+              callback(blob)
+              resolve(blob)
+            }).catch((err) => {
+              reject(err)
+            })
+            return
+          }
           callback(val)
           resolve(val)
         })
