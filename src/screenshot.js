@@ -5,6 +5,7 @@ import MosaicBrush from './MosaicBrush.js'
 import ScreenshotFabricEvent from './screenshot-fabric-event.js'
 import ScreenshotTool from './screenshot-tool'
 import { fabric } from 'fabric'
+import html2canvas from 'html2canvas'
 import {
   clearNode,
   addDragEvent,
@@ -1249,51 +1250,78 @@ export default class Screenshot {
   // endregion
 
   // region static functions
-  static getImage ({ node, width, height, scale, callback = () => {}, options = {}, dpi }) {
+  static getImage ({ node, width, height, scale = window.devicePixelRatio, callback = () => {}, options = {}, dpi, useDomToImage = false }) {
     return new Promise((resolve, reject) => {
       if (!(node instanceof window.HTMLElement)) {
         reject(new Error('node must be HTMLElement'))
       }
-      let _scale
-      if (width && height) {
-        _scale = Math.max(width / node.offsetWidth, height / node.offsetHeight)
-      } else if (scale != null) {
-        _scale = scale
+      if (useDomToImage) {
+        let _scale
+        if (width && height) {
+          _scale = Math.max(width / node.offsetWidth, height / node.offsetHeight)
+        } else if (scale != null) {
+          _scale = scale
+        } else {
+          _scale = 1
+        }
+        const style = {
+          transform: 'scale(' + _scale + ')',
+          transformOrigin: 'top left',
+          width: node.offsetWidth + 'px',
+          height: node.offsetHeight + 'px'
+        }
+        const param = {
+          height: height != null ? height : node.offsetHeight * _scale,
+          width: width != null ? width : node.offsetWidth * _scale,
+          quality: 1,
+          style,
+          cacheBust: true,
+          ...options
+        }
+        domToImage
+          .toBlob(node, param)
+          .then((val) => {
+            if (dpi) {
+              changeDpiBlob(val, dpi).then((blob) => {
+                callback(blob)
+                resolve(blob)
+              }).catch((err) => {
+                reject(err)
+              })
+              return
+            }
+            callback(val)
+            resolve(val)
+          })
+          .catch((err) => {
+            reject(err)
+          })
       } else {
-        _scale = 1
+        const param = {
+          height,
+          width,
+          scale,
+          ...options
+        }
+        html2canvas(node, param)
+          .then((canvas) => {
+            const val = dataURLToBlob(canvas.toDataURL())
+            if (dpi) {
+              changeDpiBlob(val, dpi).then((blob) => {
+                callback(blob)
+                resolve(blob)
+              }).catch((err) => {
+                reject(err)
+              })
+              return
+            }
+            callback(val)
+            resolve(val)
+          })
+          .catch((err) => {
+            reject(err)
+          })
       }
-      const style = {
-        transform: 'scale(' + _scale + ')',
-        transformOrigin: 'top left',
-        width: node.offsetWidth + 'px',
-        height: node.offsetHeight + 'px'
-      }
-      const param = {
-        height: height != null ? height : node.offsetHeight * _scale,
-        width: width != null ? width : node.offsetWidth * _scale,
-        quality: 1,
-        style,
-        cacheBust: true,
-        ...options
-      }
-      domToImage
-        .toBlob(node, param)
-        .then((val) => {
-          if (dpi) {
-            changeDpiBlob(val, dpi).then((blob) => {
-              callback(blob)
-              resolve(blob)
-            }).catch((err) => {
-              reject(err)
-            })
-            return
-          }
-          callback(val)
-          resolve(val)
-        })
-        .catch((err) => {
-          reject(err)
-        })
     })
   }
 
