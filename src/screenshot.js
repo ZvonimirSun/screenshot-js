@@ -1,4 +1,4 @@
-import domToImage from 'dom-to-image'
+import { toBlob } from 'html-to-image'
 import { saveAs } from 'file-saver'
 import { changeDpiBlob } from './ChangeDpi.js'
 import MosaicBrush from './MosaicBrush.js'
@@ -1278,8 +1278,7 @@ export default class Screenshot {
           cacheBust: true,
           ...options
         }
-        domToImage
-          .toBlob(node, param)
+        toBlob(node, param)
           .then((val) => {
             if (dpi) {
               changeDpiBlob(val, dpi).then((blob) => {
