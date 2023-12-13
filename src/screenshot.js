@@ -1276,6 +1276,7 @@ export default class Screenshot {
           quality: 1,
           style,
           cacheBust: true,
+          includeQueryParams: true,
           ...options
         }
         toBlob(node, param)
