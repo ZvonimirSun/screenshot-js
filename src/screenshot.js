@@ -1003,7 +1003,7 @@ export default class Screenshot {
         top: 0,
         left: 0,
         stroke: 'red',
-        strokeWidth: strokeWidth,
+        strokeWidth,
         objectCaching: false,
         originX: 'left',
         originY: 'center'
@@ -1305,7 +1305,9 @@ export default class Screenshot {
         }
         html2canvas(node, param)
           .then((canvas) => {
-            const val = dataURLToBlob(canvas.toDataURL())
+            return dataURLToBlob(canvas.toDataURL())
+          })
+          .then((val) => {
             if (dpi) {
               changeDpiBlob(val, dpi).then((blob) => {
                 callback(blob)
@@ -1317,6 +1319,7 @@ export default class Screenshot {
             }
             callback(val)
             resolve(val)
+            return val
           })
           .catch((err) => {
             reject(err)
