@@ -14,13 +14,18 @@ async function getScreenShot () {
   img.setAttribute('src', './test.png')
   img.setAttribute('crossOrigin', 'anonymous')
   document.getElementsByClassName('editor')[0].appendChild(img)
-  Screenshot.getImage({
-    node: img
-  }).then(function (blob) {
-    const resultImg = document.createElement('img')
-    resultImg.setAttribute('src', window.URL.createObjectURL(blob))
-    document.getElementsByClassName('editor')[0].appendChild(resultImg)
-  })
+  img.onload = function () {
+    img.style.width = img.offsetWidth + 'px'
+    Screenshot.getImage({
+      node: img
+      // width: img.naturalWidth,
+      // height: img.naturalHeight
+    }).then(function (blob) {
+      const resultImg = document.createElement('img')
+      resultImg.setAttribute('src', window.URL.createObjectURL(blob))
+      document.getElementsByClassName('editor')[0].appendChild(resultImg)
+    })
+  }
 }
 
 getScreenShot()

@@ -1249,30 +1249,22 @@ export default class Screenshot {
   // endregion
 
   // region static functions
-  static getImage ({ node, width, height, scale = window.devicePixelRatio, callback = () => {}, options = {}, dpi }) {
+  static getImage ({ node, width, height, callback = () => {}, options = {}, dpi = 300 }) {
     return new Promise((resolve, reject) => {
       if (!(node instanceof window.HTMLElement)) {
         reject(new Error('node must be HTMLElement'))
       }
-      let _scale
+
+      let scale = (1 / window.devicePixelRatio) || 1
+
       if (width && height) {
-        _scale = Math.max(width / node.offsetWidth, height / node.offsetHeight)
-      } else if (scale != null) {
-        _scale = scale
-      } else {
-        _scale = 1
+        scale = Math.max(width / node.offsetWidth, height / node.offsetHeight)
       }
-      const style = {
-        transform: 'scale(' + _scale + ')',
-        transformOrigin: 'top left',
-        width: node.offsetWidth + 'px',
-        height: node.offsetHeight + 'px'
-      }
+
       const param = {
-        height: height != null ? height : node.offsetHeight * _scale,
-        width: width != null ? width : node.offsetWidth * _scale,
+        height: node.offsetHeight * scale,
+        width: node.offsetWidth * scale,
         quality: 1,
-        style,
         cacheBust: true,
         includeQueryParams: true,
         ...options
