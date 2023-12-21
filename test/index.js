@@ -16,10 +16,18 @@ async function getScreenShot () {
   document.getElementsByClassName('editor')[0].appendChild(img)
   img.onload = function () {
     img.style.width = img.offsetWidth + 'px'
+    const dpi = 300
+    const pageWidth = 420
+    const pageHeight = 297
+
+    const width = pageWidth / 25.4 * dpi
+    const height = pageHeight / 25.4 * dpi
+
     Screenshot.getImage({
-      node: img
-      // width: img.naturalWidth,
-      // height: img.naturalHeight
+      node: img,
+      width,
+      height,
+      dpi
     }).then(function (blob) {
       const resultImg = document.createElement('img')
       resultImg.setAttribute('src', window.URL.createObjectURL(blob))

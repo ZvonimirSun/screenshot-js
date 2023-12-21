@@ -41,6 +41,11 @@ const _H = 'H'.charCodeAt(0)
 const _Y = 'Y'.charCodeAt(0)
 const _S = 's'.charCodeAt(0)
 
+/**
+ * @param {Blob} blob
+ * @param {number} dpi
+ * @returns {Promise<Blob>}
+ */
 export function changeDpiBlob (blob, dpi) {
   // 33 bytes are ok for pngs and jpegs
   // to contain the information.

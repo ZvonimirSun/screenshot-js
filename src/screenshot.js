@@ -1249,39 +1249,55 @@ export default class Screenshot {
   // endregion
 
   // region static functions
-  static getImage ({ node, width, height, callback = () => {}, options = {}, dpi = 300 }) {
+  static getImage ({ node, width, height, callback = Function.prototype, options = {}, dpi = 300 }) {
     return new Promise((resolve, reject) => {
       if (!(node instanceof window.HTMLElement)) {
         reject(new Error('node must be HTMLElement'))
       }
 
-      let scale = (1 / window.devicePixelRatio) || 1
+      let scale = window.devicePixelRatio || 1
+      const computedStyle = window.getComputedStyle(node)
+      const topBorderWidth = parseInt(computedStyle.borderTopWidth)
+      const leftBorderWidth = parseInt(computedStyle.borderLeftWidth)
+      const bottomBorderWidth = parseInt(computedStyle.borderBottomWidth)
+      const rightBorderWidth = parseInt(computedStyle.borderRightWidth)
+      const domWidth = node.clientWidth + leftBorderWidth + rightBorderWidth
+      const domHeight = node.clientHeight + topBorderWidth + bottomBorderWidth
 
       if (width && height) {
-        scale = Math.max(width / node.offsetWidth, height / node.offsetHeight)
+        scale = Math.max(width / domWidth, height / domHeight)
+      }
+
+      const style = {
+        transform: 'scale(' + scale + ')',
+        transformOrigin: 'top left',
+        width: domWidth + 'px',
+        height: domHeight + 'px',
+        boxSizing: 'border-box'
       }
 
       const param = {
-        height: node.offsetHeight * scale,
-        width: node.offsetWidth * scale,
+        width: domWidth * scale,
+        height: domHeight * scale,
+        style,
         quality: 1,
         cacheBust: true,
         includeQueryParams: true,
         ...options
       }
       toBlob(node, param)
-        .then((val) => {
-          if (dpi) {
-            changeDpiBlob(val, dpi).then((blob) => {
-              callback(blob)
-              resolve(blob)
-            }).catch((err) => {
-              reject(err)
-            })
-            return
+        .then((blob) => {
+          if (!blob) {
+            return Promise.reject(new Error('get image error'))
           }
-          callback(val)
-          resolve(val)
+          return dpi ? changeDpiBlob(blob, dpi) : blob
+        })
+        .then((blob) => {
+          setTimeout(() => {
+            resolve(blob)
+            callback(blob)
+          }, 0)
+          return blob
         })
         .catch((err) => {
           reject(err)
