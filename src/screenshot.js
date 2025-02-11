@@ -29,6 +29,7 @@ export default class Screenshot {
    * @param {string|undefined} [cancelColor] 取消按钮颜色
    * @param {string|undefined} [btnColor] 按钮颜色
    * @param {string|undefined} [btnSize] 按钮大小
+   * @param {number|undefined} [textSize] 文本大小
    * @param {boolean|undefined} [saveBtn=true] 保存按钮
    */
   constructor ({
@@ -42,6 +43,7 @@ export default class Screenshot {
     cancelColor,
     btnColor,
     btnSize,
+    textSize,
     saveBtn
   } = {}) {
     if (!(node instanceof window.HTMLElement)) {
@@ -69,7 +71,8 @@ export default class Screenshot {
       cancelColor: undefined,
       btnColor: undefined,
       btnSize: undefined,
-      saveBtn: true
+      saveBtn: true,
+      textSize: 18
     }
 
     merge(this._options, {
@@ -79,7 +82,8 @@ export default class Screenshot {
       cancelColor,
       btnColor,
       btnSize,
-      saveBtn
+      saveBtn,
+      textSize
     })
 
     try {
@@ -1184,12 +1188,12 @@ export default class Screenshot {
   _addToolText () {
     let tool = null
     const createTextbox = (e) => {
-      const textbox = new Textbox('文本', {
+      const textbox = new Textbox('', {
         fill: 'red',
         width: 100,
         left: e.pointer.x,
         top: e.pointer.y,
-        fontSize: 18,
+        fontSize: this._options.textSize,
         lineHeight: 1,
         lockRotation: true,
         lockScalingY: true,
